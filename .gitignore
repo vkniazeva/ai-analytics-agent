@@ -10,6 +10,7 @@ __pycache__/
 data/raw/*
 data/processed/*
 data/marts/*
+data/config/cities_mapping.json
 
 # OS
 .DS_Store

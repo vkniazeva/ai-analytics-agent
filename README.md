@@ -35,6 +35,21 @@ The system follows a layered architecture:
 
 ## Data Handling
 
+
+### Data Processing Flow
+
+Raw transactional data is transformed through an ETL pipeline:
+
+| #  | Step                                     | Project structure | ETL step      |
+|----|------------------------------------------|-------------------|---------------|
+| 1  | Data ingestion (CSV → raw layer)         | `data/raw`        | E (extract)   |
+| 2  | Data cleaning, validation, anonymization | `data/processed`  | T (transform) |
+| 3  | Data modeling into analytical marts      | `data/marts`      | L (load)      |
+
+Output: data in a star schema in columnar format (Parquet) stored in `data/marts`
+
+---
+
 ### Data Sources
 
 The system is based on synthetic airline retail operations data:
@@ -47,35 +62,42 @@ The system is based on synthetic airline retail operations data:
 
 ---
 
+### Data Processing
+As an intermediate step, raw data is transformed into a processed layer stored in Parquet format.
+
+This layer includes:
+- cleaned and standardized column names
+- normalized data types (dates, numeric fields)
+- deterministic anonymization of sensitive fields
+- validation and basic quality checks
+
+The processed layer preserves the original granularity of the data while ensuring consistency and usability for downstream analytics.
+
+Flight data example:
+
+```
+  flight_no scheduled_date scheduled_time    origin destination class  pax
+0     AB133     2026-01-01          22:40  city_001    city_002     Y  174
+1     AB134     2026-01-02          05:00  city_002    city_001     Y  166
+2     AB714     2026-01-01          09:00  city_001    city_003     Y  125
+3     AB715     2026-01-01          13:30  city_003    city_001     Y  174
+4     AB141     2026-01-01          22:40  city_001    city_004     Y  174
+```
+
+All datasets are anonymized using deterministic mappings.
+Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
+To see an example of mapping file, `data/config/mapping_example.json` can be used.
+
+---
+
 ### Data Model
 
-The data is structured using a **star schema approach**:
+The final analytical layer (data marts) will follow a star schema design, consisting of fact and dimension tables optimized for analytical queries and LLM-driven exploration.
 
-- Fact table: sales transactions
-- Dimension tables:
-  - flights
-  - products
-  - payments
-  - passengers
-  - time
 
-DESIGN IN PROGRESS
 
 ---
 
-### Data Processing
-
-Raw transactional data is transformed through an ETL pipeline:
-
-| #  | Step                                     | Project structure | ETL step      |
-|----|------------------------------------------|-------------------|---------------|
-| 1  | Data ingestion (CSV → raw layer)         | `data/raw`        | E (extract)   |
-| 2  | Data cleaning, validation, anonymization | `data/processed`  | T (transform) |
-| 3  | Aggregation into analytical datasets     | `data/marts`      | L (load)      |
-
-Output: data in a star schema in columnar format (Parquet) stored in `data/marts`
-
----
 
 ## Setup
 
