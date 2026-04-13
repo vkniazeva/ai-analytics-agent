@@ -31,10 +31,41 @@ The system follows a layered architecture:
 - **Serving Layer**: Analytics API exposing business metrics
 - **AI Layer**: LLM-based agent for query interpretation and reasoning
 
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+
+    subgraph Data Layer
+        A[Raw Data\nCSV / Excel]
+    end
+
+    subgraph Processing Layer
+        B[ETL Pipeline\nCleaning / Anonymization]
+        C[Processed Data\nParquet]
+        D[Data Marts\nStar Schema]
+    end
+
+    subgraph Serving Layer
+        E[Analytics API\nFastAPI]
+    end
+
+    subgraph AI Layer
+        F[LLM Agent\nBedrock / Local]
+    end
+
+    subgraph Output
+        G[Insights]
+        H[Visualizations]
+    end
+
+    A --> B --> C --> D --> E --> F
+    F --> G
+    F --> H
+
 ---
 
 ## Data Handling
-
 
 ### Data Processing Flow
 
@@ -82,6 +113,30 @@ Flight data example:
 2     AB714     2026-01-01          09:00  city_001    city_003     Y  125
 3     AB715     2026-01-01          13:30  city_003    city_001     Y  174
 4     AB141     2026-01-01          22:40  city_001    city_004     Y  174
+```
+
+Payment data example:
+```
+   session_id  load_id                               slip_id flight_no  
+0  1770300067     9808  00012190-7095-400d-b3bb-acee00d07eba     AB064   
+1  1770300067     9808  00012190-7095-400d-b3bb-acee00d07eba     AB064   
+2  1770648682     9914  000133f5-95fb-4a8d-909a-ecaafa7d30af     AB064   
+3  1772159581    10394  0002f70b-08ad-4215-b6ac-6e8d58759a1a     AB131   
+4  1771332937    10128  0003dfe8-db9c-45d0-831b-04a8c803dd28     AB032 
+
+     origin destination is_offline_mode sales_type payment_type  \
+0  city_019    city_001             NaN       Sale         Cash   
+1  city_019    city_001             NaN       Sale         Cash   
+2  city_019    city_001             NaN       Sale         Cash   
+3  city_001    city_002            True       Sale         Card   
+4  city_001    city_005             NaN       Sale         Cash   
+
+   purchase_amount card_number_prefix card_type  
+0              0.6                NaN       NaN  
+1              1.0                NaN       NaN  
+2             28.0                NaN       NaN  
+3             14.0             457828      visa  
+4              7.0                NaN       NaN   
 ```
 
 All datasets are anonymized using deterministic mappings.
