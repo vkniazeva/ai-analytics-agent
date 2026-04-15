@@ -140,6 +140,32 @@ Payment data example:
 4              7.0                NaN       NaN   
 ```
 
+
+Sales data example: 
+
+```
+   session_id load_id flight_no    origin destination  \
+0  1773148639   10769     AB166  city_001    city_006   
+1  1773282427   10813     AB131  city_001    city_002   
+2  1773282427   10813     AB131  city_001    city_002   
+3  1773282427   10813     AB131  city_001    city_002   
+4  1773282427   10813     AB131  city_001    city_002   
+
+                                slip_id sales_type   item_category   item_id  \
+0  47828792-6f3c-491b-8fc1-e5eaaacc5a12       Sale   Hot Beverages    150204   
+1  60c36a4c-a427-4848-85e1-3db02dae031e       Sale   Hot Beverages    150205   
+2  bd00b09a-73db-4bb0-b870-7b0fee6841b2       Sale          Snacks    109779   
+3  a526c1c0-a769-4a81-81a0-37fb3c737622       Sale          Bakery  C3L2D042   
+4  dcf6f5c7-6648-485d-b111-c177e61126b3       Sale  Cold Beverages    150547   
+
+   price  quantity  purchase_amount  discount_amount       date      time  
+0    7.0         1              5.0              2.0 2026-03-10  17:45:00  
+1    7.0         1              7.0              0.0 2026-03-12  07:00:00  
+2    5.0         1              5.0              0.0 2026-03-12  07:00:00  
+3    7.0         1              5.0              2.0 2026-03-12  07:00:00  
+4    3.0         1              3.0              0.0 2026-03-12  07:00:00 
+```
+
 All datasets are anonymized using deterministic mappings.
 Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
 To see an example of mapping file, `data/config/mapping_example.json` can be used.
@@ -158,3 +184,21 @@ The final analytical layer (data marts) will follow a star schema design, consis
 ## Setup
 
 TBD
+
+## Changelog and State
+- 15/04/2026 - added sales data preprocessing and data formatting
+
+
+Completed:
+- data staging:
+  - data loading (passengers count, sales, payments)
+  - unifying based on naming convention
+  - following data type common schema
+
+To be done next (this week):
+- data staging:
+  - data loading (schedule, wastages)
+  - data validation and cleaning: remove duplicates, checking NaN (by black and white listing)
+- data presentation:
+  - creating schema
+  - creating dims
