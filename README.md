@@ -2,6 +2,21 @@
 
 An AI-powered analytics system that enables natural language exploration of structured business data using an ETL-based data pipeline, semantic analytics API, and LLM-driven insights generation.
 
+Table Of Content:
+1. [Business Context](#business-context)
+2. [Features](#features)
+3. [Architecture](#architecture)
+   - [Architecture Diagram](#architecture-diagram)
+4. [Data Handling](#data-handling)
+    - [Data Sources](#data-sources)
+    - [Data Processing Flow](#data-processing-flow)
+    - [Data Model](#data-model)
+5. [Setup](#setup)
+6. [Changelog and State](#changelog-and-state)
+7. [Other](#other)
+    - [Data processed examples](#data-processed-examples)
+
+
 ---
 
 ## Business Context
@@ -31,7 +46,7 @@ The system follows a layered architecture:
 - **Serving Layer**: Analytics API exposing business metrics
 - **AI Layer**: LLM-based agent for query interpretation and reasoning
 
-## Architecture Diagram
+### Architecture Diagram
 
 ```mermaid
 flowchart LR
@@ -105,6 +120,44 @@ This layer includes:
 
 The processed layer preserves the original granularity of the data while ensuring consistency and usability for downstream analytics.
 
+
+---
+
+### Data Model
+
+The final analytical layer (data marts) will follow a star schema design, consisting of fact and dimension tables optimized for analytical queries and LLM-driven exploration.
+
+
+
+---
+
+
+## Setup
+
+TBD
+
+## Changelog and State
+- 15/04/2026 - added sales data preprocessing and data formatting
+- 16/04/2026 - code refactoring and completed data loading, standardization 
+
+
+Completed:
+- data staging:
+  - data loading (passengers count, sales, payments)
+  - unifying based on naming convention
+  - following data type common schema
+
+To be done next (this week):
+- data staging:
+  - data validation and cleaning: remove duplicates, checking NaN (by black and white listing)
+- data presentation:
+  - creating schema
+  - creating dims
+
+## Other
+
+### Data processed examples
+
 Flight data example:
 
 ```
@@ -140,7 +193,6 @@ Payment data example:
 4              7.0                NaN       NaN   
 ```
 
-
 Sales data example: 
 
 ```
@@ -170,35 +222,37 @@ All datasets are anonymized using deterministic mappings.
 Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
 To see an example of mapping file, `data/config/mapping_example.json` can be used.
 
----
+Wastage data example:
 
-### Data Model
+```
+  load_id flight_no scheduled_date   item_category item_id item_type  \
+0    8825     AB452     2026-01-02   Hot Beverages  151281   Ambient   
+1    8825     AB452     2026-01-02   Hot Beverages  151282   Ambient   
+2    8825     AB452     2026-01-02          Snacks  100744   Ambient   
+3    8825     AB452     2026-01-02  Cold Beverages  151287   Ambient   
+4    8825     AB452     2026-01-02  Cold Beverages  151288   Ambient   
 
-The final analytical layer (data marts) will follow a star schema design, consisting of fact and dimension tables optimized for analytical queries and LLM-driven exploration.
+   load_quantity  quantity  wastage_quantity  fresh_wastage_quantity  \
+0              5         0                 0                       0   
+1              5         0                 0                       0   
+2              4         4                 0                       0   
+3              6         1                 0                       0   
+4              6         1                 0                       0   
 
+     origin destination  
+0  city_001    city_014  
+1  city_001    city_014  
+2  city_001    city_014  
+3  city_001    city_014  
+4  city_001    city_014  
+```
 
-
----
-
-
-## Setup
-
-TBD
-
-## Changelog and State
-- 15/04/2026 - added sales data preprocessing and data formatting
-
-
-Completed:
-- data staging:
-  - data loading (passengers count, sales, payments)
-  - unifying based on naming convention
-  - following data type common schema
-
-To be done next (this week):
-- data staging:
-  - data loading (schedule, wastages)
-  - data validation and cleaning: remove duplicates, checking NaN (by black and white listing)
-- data presentation:
-  - creating schema
-  - creating dims
+Schedule data example:
+```
+  line_id flight_no    origin destination order_id       date      time
+0  204153     AB133  city_001    city_002   8777.0 2026-01-01  22:40:00
+1  204461     AB714  city_001    city_003   8778.0 2026-01-01  09:00:00
+2  204493     AB141  city_001    city_004   8779.0 2026-01-01  22:40:00
+3  206623     AB126  city_011    city_001     <NA> 2026-01-01  21:30:00
+4  211470     AB112  city_016    city_001     <NA> 2026-01-01  06:05:00
+```

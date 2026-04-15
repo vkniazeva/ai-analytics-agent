@@ -11,29 +11,100 @@ from pathlib import Path
 import pandas as pd
 import json
 
-from pandas.core.interchange.dataframe_protocol import DataFrame
 
+# CONFIG / PATHS
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_PATH = BASE_DIR / "data/raw"
 PROCESSED_PATH = BASE_DIR / "data/processed"
 CONFIG_PATH = BASE_DIR / "data/config/cities_mapping.json"
+
 pd.set_option('display.max_columns', None)
 
+
 def main():
-    pax_df = load_pax()
-    save_processed(pax_df, "pax.parquet")
-    payment_df = load_payments()
-    save_processed(payment_df, "payments.parquet")
-    sales_df = load_sales()
-    save_processed(sales_df, "sales.parquet")
+    run_pipeline("pax")
+    run_pipeline("sales")
+    run_pipeline("payments")
+    run_pipeline("wastage")
+    run_pipeline("schedule")
 
+# PIPELINES
+def run_pipeline(dataset_name: str):
+    df = load(dataset_name)
+    df = standardize(df, dataset_name)
+    # df = clean(df, dataset_name)  # placeholder
+    save(df, dataset_name)
 
-def save_processed(df, filename):
-    path = PROCESSED_PATH / filename
-    df.to_parquet(path)
+# LOAD LAYER
+def load(dataset_name: str):
+    if dataset_name == "pax":
+        return load_pax()
+    elif dataset_name == "sales":
+        return load_sales()
+    elif dataset_name == "payments":
+        return load_payments()
+    elif dataset_name == "wastage":
+        return load_wastage()
+    elif dataset_name == "schedule":
+        return load_schedule()
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
+
+def load_pax():
+    return load_file("csv", "pax*")
 
 def load_sales():
-    sales_df = load_file("xlsx", "sales*")
+    return load_file("xlsx", "sales*")
+
+def load_payments():
+    return load_file("xlsx", "payment*")
+
+def load_wastage():
+    return load_file("xlsx", "wastage*")
+
+def load_schedule():
+    return load_file("csv", "schedule*")
+
+# STANDARDIZATION LAYER
+def standardize(df, dataset_name: str):
+    if dataset_name == "pax":
+        return standardize_pax(df)
+    elif dataset_name == "sales":
+        return standardize_sales(df)
+    elif dataset_name == "payments":
+        return standardize_payments(df)
+    elif dataset_name == "wastage":
+        return standardize_wastage(df)
+    elif dataset_name == "schedule":
+        return standardize_schedule(df)
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
+
+def standardize_pax(df):
+    renamed_cols = {
+        "Flight Number": "flight_no",
+        "Scheduled Date": "date",
+        "Scheduled Time": "time",
+        "Origin": "origin",
+        "Destination": "destination",
+        "Class": "class",
+        "PAX": "pax"
+    }
+    schema = {
+        "flight_no": "string",
+        "origin": "string",
+        "destination": "string",
+        "class": "string",
+        "pax": "string"
+    }
+    df = rename_cols(df, renamed_cols)
+    df = process_flight_data(df)
+    df = format_cols(df, schema)
+    df["date"] = pd.to_datetime(df["date"], format="%d/%m/%y").dt.date
+    df["time"] = pd.to_datetime(df["time"], format="%H:%M").dt.time
+    return df
+
+def standardize_sales(df):
     renamed_cols = {
         "Session No": "session_id",
         "Order No": "load_id",
@@ -50,7 +121,6 @@ def load_sales():
         "Sale Amount": "purchase_amount",
         "Promotion Discount": "discount_amount",
     }
-    sales_df = rename_cols(sales_df, renamed_cols)
     schema = {
         "session_id": "string",
         "load_id": "string",
@@ -67,14 +137,13 @@ def load_sales():
         "purchase_amount": "float",
         "discount_amount": "float"
     }
-    sales_df["session_id"] = sales_df["session_id"].str[7:]
-    sales_df = process_flight_data(sales_df)
-    sales_df = format_cols(sales_df, schema, date_separator="T")
-    print(sales_df.head(5))
-    return sales_df
+    df = rename_cols(df, renamed_cols)
+    df["session_id"] = df["session_id"].str[7:]
+    df = process_flight_data(df)
+    df = format_cols(df, schema, date_separator="T", date_format="%Y-%m-%d", time_format="%H:%M:%S")
+    return df
 
-def load_payments():
-    payments_df = load_file("xlsx", "payment*")
+def standardize_payments(df):
     renamed_cols = {
         "Session No": "session_id",
         "Order No": "load_id",
@@ -90,7 +159,6 @@ def load_payments():
         "Card Digits": "card_number_prefix",
         "Card Type": "card_type",
     }
-    payments_df = rename_cols(payments_df, renamed_cols)
     schema = {
         "session_id": "string",
         "load_id": "string",
@@ -106,38 +174,96 @@ def load_payments():
         "card_number_prefix": "string",
         "card_type": "string",
     }
-    payments_df = format_cols(payments_df, schema, date_separator="T")
-    payments_df["session_id"] = payments_df["session_id"].str[7:]
-    payments_df["card_number_prefix"] = payments_df["card_number_prefix"].str[:6]
-    payments_df = process_flight_data(payments_df)
-    print(payments_df.head(5))
-    return payments_df
+    df = rename_cols(df, renamed_cols)
+    df = format_cols(df, schema, date_separator="T", date_format="%Y-%m-%d", time_format="%H:%M:%S")
+    df["session_id"] = df["session_id"].str[7:]
+    df["card_number_prefix"] = df["card_number_prefix"].str[:6]
+    df = process_flight_data(df)
+    return df
 
-
-def load_pax():
-    pax_df = load_file("csv", "pax*")
+def standardize_wastage(df):
     renamed_cols = {
-        "Flight Number": "flight_no",
+        "Order No": "load_id",
+        "Flight No": "flight_no",
+        "Scheduled Route": "route",
         "Scheduled Date": "scheduled_date",
-        "Scheduled Time": "scheduled_time",
-        "Origin": "origin",
-        "Destination": "destination",
-        "Class": "class",
-        "PAX": "pax"
+        "Item Category": "item_category",
+        "Item Reference": "item_id",
+        "Item Type": "item_type",
+        "Ordered Qty": "load_quantity",
+        "Sold Qty": "quantity",
+        "Damaged Waste Qty": "wastage_quantity",
+        "QTY Fresh Waste": "fresh_wastage_quantity"
     }
-    pax_df = rename_cols(pax_df, renamed_cols)
     schema = {
+        "load_id": "string",
         "flight_no": "string",
         "origin": "string",
         "destination": "string",
-        "class": "string",
-        "pax": "string"
+        "item_category": "string",
+        "item_id": "string",
+        "item_type": "string",
+        "load_quantity": "int64",
+        "wastage_quantity": "int64",
+        "fresh_wastage_quantity": "int64"
     }
-    pax_df = process_flight_data(pax_df)
-    pax_df = format_cols(pax_df, schema)
-    pax_df["date"] = pd.to_datetime(pax_df["scheduled_date"], format="%d/%m/%y")
-    print(pax_df.head(5))
-    return pax_df
+    df = rename_cols(df, renamed_cols)
+    df["origin"] = df["route"].str.split("-").str[0]
+    df["destination"] = df["route"].str.split("-").str[1]
+    df = df.drop("route", axis=1)
+    df = process_flight_data(df)
+    df["scheduled_date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y")
+    df = format_cols(df, schema)
+    return df
+
+def standardize_schedule(df):
+    renamed_cols = {
+        "line_id": "line_id",
+        "flight_no": "flight_no",
+        "iata_departure": "origin",
+        "iata_destination": "destination",
+        "scheduled_datetime": "scheduled_date",
+        "order_no": "order_id"
+    }
+    schema = {
+        "line_id": "string",
+        "flight_no": "string",
+        "origin": "string",
+        "destination": "string",
+        "scheduled_date": "date",
+        "order_id": "string"
+    }
+    df = rename_cols(df, renamed_cols)
+    df = process_flight_data(df)
+    df = format_cols(df, schema, date_separator=" ", date_format="%d/%m/%y", time_format="%H:%M")
+    return df
+
+# CLEAN (TODO: implement data quality rules)
+# def clean(df, dataset_name: str):
+#     return df
+
+# SAVE
+def save(df, dataset_name: str):
+    print(dataset_name.upper())
+    print(df.head(5))
+    path = PROCESSED_PATH / f"{dataset_name}.parquet"
+    df.to_parquet(path)
+
+# UTILITIES
+def rename_cols(df, renamed_cols: dict):
+    columns_to_leave = renamed_cols.values()
+    df = df.rename(columns=renamed_cols)[columns_to_leave]
+    return df
+
+def format_cols(df, schema: dict, date_separator=None, date_format=None, time_format=None):
+    for column, dtype in schema.items():
+        if (dtype == "date") and (date_separator is not None):
+            df["date"] = pd.to_datetime(df[column].str.split(date_separator).str[0], format=date_format).dt.date
+            df["time"] = pd.to_datetime(df[column].str.split(date_separator).str[1], format=time_format).dt.time
+            df = df.drop(column, axis=1)
+        else:
+            df[column] = df[column].astype(dtype)
+    return df
 
 def process_flight_data(df):
     df["flight_no"] = df["flight_no"].astype(str)
@@ -147,34 +273,12 @@ def process_flight_data(df):
     df["destination"] = df["destination"].map(cities_map).fillna("UNKNOWN")
     return df
 
-
-def rename_cols(df:DataFrame, renamed_cols:dict):
-    columns_to_leave = renamed_cols.values()
-    df = df.rename(columns=renamed_cols)[columns_to_leave]
-    return df
-
-
-def format_cols(df:DataFrame, schema:dict, date_separator=None):
-    for column, dtype in schema.items():
-        if (dtype == "date") & (date_separator is not None) :
-            df["date"] = pd.to_datetime(df[column].str.split(date_separator).str[0], format="%Y-%m-%d")
-            df["time"] = pd.to_datetime(df[column].str.split(date_separator).str[1], format="%H:%M:%S").dt.time
-            df = df.drop(column, axis=1)
-        else: df[column] = df[column].astype(dtype)
-    return df
-
-
 def load_city_mapping(path):
-    """here cities_mapping.json file is used to load the data,
-    but for privacy reasons it is excluded from the available files on github,
-    instead mapping_example.json can be used"""
     with open(path, "r") as f:
         return json.load(f)
 
-
-def load_file(type:str, prefix:str):
-    path = Path(RAW_PATH)
-    files = list(path.glob(prefix))
+def load_file(type: str, prefix: str):
+    files = list(RAW_PATH.glob(prefix))
     dfs = []
     for file in files:
         if type == "csv":
@@ -182,9 +286,8 @@ def load_file(type:str, prefix:str):
         else:
             df = pd.read_excel(file)
         dfs.append(df)
-    df = pd.concat(dfs, ignore_index=True)
-    return df
-
+    return pd.concat(dfs, ignore_index=True)
 
 if __name__ == "__main__":
     main()
+
