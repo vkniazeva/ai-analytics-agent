@@ -32,7 +32,7 @@ def main():
 def run_pipeline(dataset_name: str):
     df = load(dataset_name)
     df = standardize(df, dataset_name)
-    # df = clean(df, dataset_name)  # placeholder
+    df = clean(df, dataset_name)  # placeholder
     save(df, dataset_name)
 
 # LOAD LAYER
@@ -95,7 +95,7 @@ def standardize_pax(df):
         "origin": "string",
         "destination": "string",
         "class": "string",
-        "pax": "string"
+        "pax": "int"
     }
     df = rename_cols(df, renamed_cols)
     df = process_flight_data(df)
@@ -191,7 +191,7 @@ def standardize_wastage(df):
         "Item Reference": "item_id",
         "Item Type": "item_type",
         "Ordered Qty": "load_quantity",
-        "Sold Qty": "quantity",
+        "Sold Qty": "sold_quantity",
         "Damaged Waste Qty": "wastage_quantity",
         "QTY Fresh Waste": "fresh_wastage_quantity"
     }
@@ -204,6 +204,7 @@ def standardize_wastage(df):
         "item_id": "string",
         "item_type": "string",
         "load_quantity": "int64",
+        "sold_quantity": "int64",
         "wastage_quantity": "int64",
         "fresh_wastage_quantity": "int64"
     }
@@ -212,7 +213,7 @@ def standardize_wastage(df):
     df["destination"] = df["route"].str.split("-").str[1]
     df = df.drop("route", axis=1)
     df = process_flight_data(df)
-    df["scheduled_date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y")
+    df["date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y")
     df = format_cols(df, schema)
     return df
 
@@ -238,9 +239,58 @@ def standardize_schedule(df):
     df = format_cols(df, schema, date_separator=" ", date_format="%d/%m/%y", time_format="%H:%M")
     return df
 
-# CLEAN (TODO: implement data quality rules)
-# def clean(df, dataset_name: str):
-#     return df
+# CLEAN
+def clean(df, dataset_name: str):
+    if dataset_name == "pax":
+        return clean_pax(df)
+    elif dataset_name == "sales":
+        return clean_sales(df)
+    elif dataset_name == "payments":
+        return clean_payments(df)
+    elif dataset_name == "wastage":
+        return clean_wastage(df)
+    elif dataset_name == "schedule":
+        return clean_schedule(df)
+    else:
+        raise ValueError(f"Unknown dataset: {dataset_name}")
+
+
+def clean_pax(df):
+    df = drop_duplicates(df)
+    required_cols = ["flight_no", "date", "pax"]
+    df = drop_invalid_nan(df, required_cols)
+    not_negative_cols = ["pax"]
+    df = filter_negatives(df, not_negative_cols)
+    return df
+
+def clean_sales(df):
+    df = drop_duplicates(df)
+    required_cols = ["session_id", "load_id", "flight_no", "date", "slip_id", "sales_type", "item_id", "quantity", "purchase_amount"]
+    df = drop_invalid_nan(df, required_cols)
+    not_negative_cols = ["quantity", "price", "discount_amount"]
+    df = filter_negatives(df, not_negative_cols)
+    return df
+
+def clean_payments(df):
+    df = drop_duplicates(df)
+    required_cols = ["session_id", "load_id", "slip_id", "flight_no", "sales_type", "payment_type", "purchase_amount"]
+    df = drop_invalid_nan(df, required_cols)
+    return df
+
+def clean_wastage(df):
+    df = drop_duplicates(df)
+    required_cols = ["load_id", "flight_no", "date", "item_id", "load_quantity", "sold_quantity"]
+    df = drop_invalid_nan(df, required_cols)
+    not_negative_cols = ["load_quantity", "sold_quantity", "wastage_quantity", "fresh_wastage_quantity"]
+    df = filter_negatives(df, not_negative_cols)
+    return df
+
+def clean_schedule(df):
+    df = drop_duplicates(df)
+    required_cols = ["line_id", "flight_no", "date"]
+    df = drop_invalid_nan(df, required_cols)
+    return df
+
 
 # SAVE
 def save(df, dataset_name: str):
@@ -287,6 +337,20 @@ def load_file(type: str, prefix: str):
             df = pd.read_excel(file)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
+
+def drop_duplicates(df):
+    df = df.drop_duplicates()
+    return df
+
+def drop_invalid_nan(df, required_cols: list):
+    df = df.replace("nan", pd.NA)
+    df = df.dropna(subset=required_cols)
+    return df
+
+def filter_negatives(df, cols):
+    for col in cols:
+        df = df[df[col] >= 0]
+    return df
 
 if __name__ == "__main__":
     main()

@@ -117,6 +117,9 @@ This layer includes:
 - normalized data types (dates, numeric fields)
 - deterministic anonymization of sensitive fields
 - validation and basic quality checks
+  - dropping duplicates
+  - dropping nan records if present in the required (keys) columns
+  - dropping negative values if present in the required (numeric) columns
 
 The processed layer preserves the original granularity of the data while ensuring consistency and usability for downstream analytics.
 
@@ -139,17 +142,14 @@ TBD
 ## Changelog and State
 - 15/04/2026 - added sales data preprocessing and data formatting
 - 16/04/2026 - code refactoring and completed data loading, standardization 
+- 17/04/2026 - completed data preprocessing step
 
 
 Completed:
-- data staging:
-  - data loading (passengers count, sales, payments)
-  - unifying based on naming convention
-  - following data type common schema
+- data loading
+- data staging
 
 To be done next (this week):
-- data staging:
-  - data validation and cleaning: remove duplicates, checking NaN (by black and white listing)
 - data presentation:
   - creating schema
   - creating dims
