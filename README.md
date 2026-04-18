@@ -143,6 +143,7 @@ TBD
 - 15/04/2026 - added sales data preprocessing and data formatting
 - 16/04/2026 - code refactoring and completed data loading, standardization 
 - 17/04/2026 - completed data preprocessing step
+- 18/04/2026 - added product catalog to the etl processing + dim_product 
 
 
 Completed:
@@ -255,4 +256,14 @@ Schedule data example:
 2  204493     AB141  city_001    city_004   8779.0 2026-01-01  22:40:00
 3  206623     AB126  city_011    city_001     <NA> 2026-01-01  21:30:00
 4  211470     AB112  city_016    city_001     <NA> 2026-01-01  06:05:00
+```
+
+Product Catalog data:
+```
+    item_id status      item_category         is_food  item_type      price 
+0   VGSW    Active      BOL Products          True    Fresh Product   17.0 
+1   150486  Inactive    Cold Beverages        True    Ambiant Product 5.0 
+2   109792  Active      Snacks                True    Ambiant Product 15.0 
+3   203167  Active      Gifts and Essentials  False   Product         60.0 
+4   109789  Inactive    Gifts and Essentials  True    Ambiant Product 40.0
 ```

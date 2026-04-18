@@ -9,6 +9,7 @@ __pycache__/
 # Data
 data/raw/*
 data/processed/*
+data/dwh/*
 data/marts/*
 data/config/cities_mapping.json
 

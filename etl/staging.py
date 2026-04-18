@@ -27,6 +27,7 @@ def main():
     run_pipeline("payments")
     run_pipeline("wastage")
     run_pipeline("schedule")
+    run_pipeline("product_catalog")
 
 # PIPELINES
 def run_pipeline(dataset_name: str):
@@ -47,6 +48,8 @@ def load(dataset_name: str):
         return load_wastage()
     elif dataset_name == "schedule":
         return load_schedule()
+    elif dataset_name == "product_catalog":
+        return load_product_catalog()
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -65,6 +68,9 @@ def load_wastage():
 def load_schedule():
     return load_file("csv", "schedule*")
 
+def load_product_catalog():
+    return load_file("xlsx", "product_catalog*")
+
 # STANDARDIZATION LAYER
 def standardize(df, dataset_name: str):
     if dataset_name == "pax":
@@ -77,6 +83,8 @@ def standardize(df, dataset_name: str):
         return standardize_wastage(df)
     elif dataset_name == "schedule":
         return standardize_schedule(df)
+    elif dataset_name == "product_catalog":
+        return standardize_product_catalog(df)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -239,6 +247,32 @@ def standardize_schedule(df):
     df = format_cols(df, schema, date_separator=" ", date_format="%d/%m/%y", time_format="%H:%M")
     return df
 
+def standardize_product_catalog(df):
+    renamed_cols = {
+        "Reference": "item_id",
+        "Status": "status",
+        "Family": "item_category",
+        "Food": "is_food",
+        "Type": "item_type",
+        "Selling Price": "price"
+    }
+    schema = {
+        "item_id": "string",
+        "status": "string",
+        "item_category": "string",
+        "is_food": "boolean",
+        "item_type": "string",
+        "price": "float"
+    }
+    df = rename_cols(df, renamed_cols)
+    boolean_map = {
+        "Yes": True,
+        "No": False
+    }
+    df["is_food"] = df["is_food"].map(boolean_map)
+    df = format_cols(df, schema)
+    return df
+
 # CLEAN
 def clean(df, dataset_name: str):
     if dataset_name == "pax":
@@ -251,6 +285,8 @@ def clean(df, dataset_name: str):
         return clean_wastage(df)
     elif dataset_name == "schedule":
         return clean_schedule(df)
+    elif dataset_name == "product_catalog":
+        return clean_product_catalog(df)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -288,6 +324,12 @@ def clean_wastage(df):
 def clean_schedule(df):
     df = drop_duplicates(df)
     required_cols = ["line_id", "flight_no", "date"]
+    df = drop_invalid_nan(df, required_cols)
+    return df
+
+def clean_product_catalog(df):
+    df = drop_duplicates(df)
+    required_cols = ["item_id", "item_category", "price"]
     df = drop_invalid_nan(df, required_cols)
     return df
 
