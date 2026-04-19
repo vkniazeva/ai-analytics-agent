@@ -10,11 +10,13 @@ Table Of Content:
 4. [Data Handling](#data-handling)
     - [Data Sources](#data-sources)
     - [Data Processing Flow](#data-processing-flow)
+    - [Data Warehouse (Star Schema)](#data-warehouse-star-schema)
     - [Data Model](#data-model)
 5. [Setup](#setup)
 6. [Changelog and State](#changelog-and-state)
 7. [Other](#other)
     - [Data processed examples](#data-processed-examples)
+    - [Dim data examples](#dim-data-examples)
 
 
 ---
@@ -123,8 +125,18 @@ This layer includes:
 
 The processed layer preserves the original granularity of the data while ensuring consistency and usability for downstream analytics.
 
-
 ---
+
+### Data Warehouse (Star Schema)
+
+The following dim tables are part of the data warehouse:
+
+- dim_date - a calendar table with additional dates info (year, weekday etc.)
+- dim_load - a table with the loading data (catering route id as connected flights to be catered together)
+and loading id (in particular set of trolleys to be dispatched to a plane)
+- dim_product - a table with the product catalog
+- dim_flight - a table with the flight data incl. line_id (a catering line)
+
 
 ### Data Model
 
@@ -144,16 +156,20 @@ TBD
 - 16/04/2026 - code refactoring and completed data loading, standardization 
 - 17/04/2026 - completed data preprocessing step
 - 18/04/2026 - added product catalog to the etl processing + dim_product 
+- 19/04/2026 - all dims are done (data warehouse step)
 
 
 Completed:
 - data loading
 - data staging
 
+In progress:
+- data warehouse:
+  - dim
+  - fact 
+  
 To be done next (this week):
-- data presentation:
-  - creating schema
-  - creating dims
+- data presentation
 
 ## Other
 
@@ -266,4 +282,42 @@ Product Catalog data:
 2   109792  Active      Snacks                True    Ambiant Product 15.0 
 3   203167  Active      Gifts and Essentials  False   Product         60.0 
 4   109789  Inactive    Gifts and Essentials  True    Ambiant Product 40.0
+```
+### Dim data examples
+
+_dim_product_
+```
+product_id  item_id    status         item_category         is_food     item_type  
+0           VGSW       Active          BOL Products         True        Fresh Product   
+1           150486     Inactive        Cold Beverages       True        Ambiant Product   
+2           109792     Active          Snacks               True        Ambiant Product   
+3           203167     Active          Gifts and Essentials False       Product   
+4           109789     Inactive        Gifts and Essentials True        Ambiant Product     
+```
+_dim_flight_
+```
+flight_id  flight_no date           time    origin destination line_id      source  
+0           AB133    2026-01-01  22:40:00  city_001    city_002  204153  KNOWN_DATA   
+1           AB714    2026-01-01  09:00:00  city_001    city_003  204461  KNOWN_DATA   
+2           AB141    2026-01-01  22:40:00  city_001    city_004  204493  KNOWN_DATA   
+3           AB126    2026-01-01  21:30:00  city_011    city_001  206623  KNOWN_DATA   
+4           AB112    2026-01-01  06:05:00  city_016    city_001  211470  KNOWN_DATA   
+```
+_dim_date_
+```
+        date   date_id  year  month  day  weekday weekday_name  is_weekend
+0 2025-01-01  20250101  2025      1    1        2    Wednesday       False
+1 2025-01-02  20250102  2025      1    2        3     Thursday       False
+2 2025-01-03  20250103  2025      1    3        4       Friday       False
+3 2025-01-04  20250104  2025      1    4        5     Saturday        True
+4 2025-01-05  20250105  2025      1    5        6       Sunday        True
+```
+_dim_load_
+```
+  line_id  load_id  load_key
+0  204153     8777         1
+1  204461     8778         2
+2  204493     8779         3
+3  206623  UNKNOWN         4
+4  211470  UNKNOWN         5
 ```

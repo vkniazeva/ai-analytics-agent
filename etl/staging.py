@@ -18,6 +18,9 @@ RAW_PATH = BASE_DIR / "data/raw"
 PROCESSED_PATH = BASE_DIR / "data/processed"
 CONFIG_PATH = BASE_DIR / "data/config/cities_mapping.json"
 
+START_DATE = pd.to_datetime("2026-01-01").date()
+END_DATE = pd.to_datetime("2026-03-31").date()
+
 pd.set_option('display.max_columns', None)
 
 
@@ -33,7 +36,7 @@ def main():
 def run_pipeline(dataset_name: str):
     df = load(dataset_name)
     df = standardize(df, dataset_name)
-    df = clean(df, dataset_name)  # placeholder
+    df = clean(df, dataset_name)
     save(df, dataset_name)
 
 # LOAD LAYER
@@ -159,7 +162,7 @@ def standardize_payments(df):
         "Flight No": "flight_no",
         "Flight Origin": "origin",
         "Flight Destination": "destination",
-        "Transaction Time": "transaction_time",
+        "Scheduled Date": "scheduled_date",
         "Offline": "is_offline_mode",
         "Sales Type": "sales_type",
         "Payment Type": "payment_type",
@@ -174,7 +177,7 @@ def standardize_payments(df):
         "flight_no": "string",
         "origin": "string",
         "destination": "string",
-        "transaction_time": "date",
+        "scheduled_date": "date",
         "is_offline_mode": "string",
         "sales_type": "string",
         "payment_type": "string",
@@ -221,7 +224,7 @@ def standardize_wastage(df):
     df["destination"] = df["route"].str.split("-").str[1]
     df = df.drop("route", axis=1)
     df = process_flight_data(df)
-    df["date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y")
+    df["date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y").dt.date
     df = format_cols(df, schema)
     return df
 
@@ -232,7 +235,7 @@ def standardize_schedule(df):
         "iata_departure": "origin",
         "iata_destination": "destination",
         "scheduled_datetime": "scheduled_date",
-        "order_no": "order_id"
+        "order_no": "load_id"
     }
     schema = {
         "line_id": "string",
@@ -240,7 +243,7 @@ def standardize_schedule(df):
         "origin": "string",
         "destination": "string",
         "scheduled_date": "date",
-        "order_id": "string"
+        "load_id": "Int64"
     }
     df = rename_cols(df, renamed_cols)
     df = process_flight_data(df)
@@ -290,13 +293,13 @@ def clean(df, dataset_name: str):
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
-
 def clean_pax(df):
     df = drop_duplicates(df)
     required_cols = ["flight_no", "date", "pax"]
     df = drop_invalid_nan(df, required_cols)
     not_negative_cols = ["pax"]
     df = filter_negatives(df, not_negative_cols)
+    df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_sales(df):
@@ -305,12 +308,14 @@ def clean_sales(df):
     df = drop_invalid_nan(df, required_cols)
     not_negative_cols = ["quantity", "price", "discount_amount"]
     df = filter_negatives(df, not_negative_cols)
+    df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_payments(df):
     df = drop_duplicates(df)
     required_cols = ["session_id", "load_id", "slip_id", "flight_no", "sales_type", "payment_type", "purchase_amount"]
     df = drop_invalid_nan(df, required_cols)
+    df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_wastage(df):
@@ -319,12 +324,14 @@ def clean_wastage(df):
     df = drop_invalid_nan(df, required_cols)
     not_negative_cols = ["load_quantity", "sold_quantity", "wastage_quantity", "fresh_wastage_quantity"]
     df = filter_negatives(df, not_negative_cols)
+    df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_schedule(df):
     df = drop_duplicates(df)
     required_cols = ["line_id", "flight_no", "date"]
     df = drop_invalid_nan(df, required_cols)
+    df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_product_catalog(df):
