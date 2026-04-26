@@ -99,14 +99,14 @@ def standardize_pax(df):
         "Origin": "origin",
         "Destination": "destination",
         "Class": "class",
-        "PAX": "pax"
+        "PAX": "pax_qty"
     }
     schema = {
         "flight_no": "string",
         "origin": "string",
         "destination": "string",
         "class": "string",
-        "pax": "int"
+        "pax_qty": "int"
     }
     df = rename_cols(df, renamed_cols)
     df = process_flight_data(df)
@@ -178,7 +178,7 @@ def standardize_payments(df):
         "origin": "string",
         "destination": "string",
         "scheduled_date": "date",
-        "is_offline_mode": "string",
+        "is_offline_mode": "boolean",
         "sales_type": "string",
         "payment_type": "string",
         "purchase_amount": "float",
@@ -295,9 +295,9 @@ def clean(df, dataset_name: str):
 
 def clean_pax(df):
     df = drop_duplicates(df)
-    required_cols = ["flight_no", "date", "pax"]
+    required_cols = ["flight_no", "date", "pax_qty"]
     df = drop_invalid_nan(df, required_cols)
-    not_negative_cols = ["pax"]
+    not_negative_cols = ["pax_qty"]
     df = filter_negatives(df, not_negative_cols)
     df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df

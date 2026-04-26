@@ -129,23 +129,81 @@ The processed layer preserves the original granularity of the data while ensurin
 
 ### Data Warehouse (Star Schema)
 
+The analytical layer follows a star schema design with clearly defined grains for each fact table.
+
+Key modeling principles:
+- Facts capture atomic business events at defined grain levels
+- Dimensions provide descriptive context
+- Independent business contexts (flight, session, load) are modeled as separate dimensions
+- Degenerate dimensions (e.g. slip_id) are stored directly in fact tables
+
 The following dim tables are part of the data warehouse:
 
 - dim_date - a calendar table with additional dates info (year, weekday etc.)
 - dim_load - a table with the loading data (catering route id as connected flights to be catered together)
 and loading id (in particular set of trolleys to be dispatched to a plane)
 - dim_product - a table with the product catalog
-- dim_flight - a table with the flight data incl. line_id (a catering line)
+- dim_flight - a table with the flight data incl. line_id (a catering line
+- dim_session - a table with the sales session data
+- dim_card - a table with the card data (will be enhanced with the basic bank info)
 
+
+- fact_payment
+- fact_pax
+- fact_sale
+- fact_wastage
+
+### Fact Table Grains
+
+- fact_pax → flight + class
+- fact_payment → payment event (multiple records per slip_id possible)
+- fact_sales → item-level transaction (line item)
+- fact_wastage → product per flight instance
+
+```mermaid
+flowchart LR
+
+    dim_flight --> fact_pax
+    dim_flight --> fact_payment
+    dim_flight --> fact_sales
+    dim_flight --> fact_wastage
+
+    dim_session --> fact_payment
+    dim_session --> fact_sales
+
+    dim_product --> fact_sales
+    dim_product --> fact_wastage
+
+    dim_card --> fact_payment
+
+    dim_load --> fact_wastage
+
+    dim_date --> fact_sales
+```
+
+### Notes on Data Modeling
+
+- `slip_id` is not unique and represents a receipt, not a payment transaction
+- multiple payment records can exist per `slip_id`
+- therefore, `payment_id` is introduced as a surrogate key in `fact_payment`
+- `slip_id` is treated as a degenerate dimension
+
+---
 
 ### Data Model
 
 The final analytical layer (data marts) will follow a star schema design, consisting of fact and dimension tables optimized for analytical queries and LLM-driven exploration.
 
-
-
 ---
 
+
+## Key Design Decisions
+
+- Star schema chosen for analytical simplicity and performance
+- Surrogate keys used for all dimensions
+- Fact tables retain business grain and avoid over-normalization
+- Multiple independent dimensions (flight, session, load) modeled explicitly
+- Columnar storage (Parquet) used for efficient analytical queries
 
 ## Setup
 
@@ -157,15 +215,16 @@ TBD
 - 17/04/2026 - completed data preprocessing step
 - 18/04/2026 - added product catalog to the etl processing + dim_product 
 - 19/04/2026 - all dims are done (data warehouse step)
+- 26/04/2026 - added additioinal dims, created fact_payment, fact_pax (TBD add dates refs)
 
 
 Completed:
 - data loading
 - data staging
+- dims creation
 
 In progress:
 - data warehouse:
-  - dim
   - fact 
   
 To be done next (this week):
@@ -320,4 +379,51 @@ _dim_load_
 2  204493     8779         3
 3  206623  UNKNOWN         4
 4  211470  UNKNOWN         5
+```
+
+_dim_card_
+```
+  card_number_prefix card_type  card_key
+0             457828      visa         1
+1             552191        mc         2
+2             518084        mc         3
+3             552102        mc         4
+4             454946      visa         5
+```
+
+_dim_session_
+```
+   session_id  is_offline_mode  session_key
+0  1770300067            False            1
+1  1770648682            False            2
+2  1772159581             True            3
+3  1771332937            False            4
+4   770805007             True            5
+```
+
+_fact_pax_
+```
+   flight_id class  pax_qty
+0          1     Y      174
+1         88     Y      166
+2          2     Y      125
+3         31     Y      174
+4          3     Y      174
+```
+
+_fact_payment_
+```
+   payment_id                               slip_id  session_key  flight_id  \
+0           1  00012190-7095-400d-b3bb-acee00d07eba            1       2064   
+1           2  00012190-7095-400d-b3bb-acee00d07eba            1       2064   
+2           3  000133f5-95fb-4a8d-909a-ecaafa7d30af            2       2277   
+3           4  0002f70b-08ad-4215-b6ac-6e8d58759a1a            3       3232   
+4           5  0003dfe8-db9c-45d0-831b-04a8c803dd28            4       2704   
+
+  sales_type payment_type  purchase_amount  card_id  
+0       Sale         Cash              0.6      NaN  
+1       Sale         Cash              1.0      NaN  
+2       Sale         Cash             28.0      NaN  
+3       Sale         Card             14.0      1.0  
+4       Sale         Cash              7.0      NaN  
 ```
