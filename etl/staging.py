@@ -23,7 +23,6 @@ END_DATE = pd.to_datetime("2026-03-31").date()
 
 pd.set_option('display.max_columns', None)
 
-
 def main():
     run_pipeline("pax")
     run_pipeline("sales")
@@ -31,6 +30,7 @@ def main():
     run_pipeline("wastage")
     run_pipeline("schedule")
     run_pipeline("product_catalog")
+    run_pipeline("bank")
 
 # PIPELINES
 def run_pipeline(dataset_name: str):
@@ -53,11 +53,13 @@ def load(dataset_name: str):
         return load_schedule()
     elif dataset_name == "product_catalog":
         return load_product_catalog()
+    elif dataset_name == "bank":
+        return load_bank()
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
 def load_pax():
-    return load_file("csv", "pax*")
+    return load_file("csv", "pax*", delimiter=";")
 
 def load_sales():
     return load_file("xlsx", "sales*")
@@ -69,10 +71,13 @@ def load_wastage():
     return load_file("xlsx", "wastage*")
 
 def load_schedule():
-    return load_file("csv", "schedule*")
+    return load_file("csv", "schedule*", delimiter=";")
 
 def load_product_catalog():
     return load_file("xlsx", "product_catalog*")
+
+def load_bank():
+    return load_file("csv", "bank*", delimiter=",")
 
 # STANDARDIZATION LAYER
 def standardize(df, dataset_name: str):
@@ -88,6 +93,8 @@ def standardize(df, dataset_name: str):
         return standardize_schedule(df)
     elif dataset_name == "product_catalog":
         return standardize_product_catalog(df)
+    elif dataset_name == "bank":
+        return standardize_bank(df)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -276,6 +283,31 @@ def standardize_product_catalog(df):
     df = format_cols(df, schema)
     return df
 
+def standardize_bank(df):
+    renamed_cols = {
+        "bin": "card_number_prefix",
+        "brand": "brand",
+        "type": "type",
+        "category": "category",
+        "issuer": "issuer",
+        "alpha_3": "country_short",
+        "country": "country"
+    }
+    schema = {
+        "card_number_prefix": "string",
+        "brand": "string",
+        "type": "string",
+        "category": "string",
+        "issuer": "string",
+        "country_short": "string",
+        "country": "string"
+    }
+    df = rename_cols(df, renamed_cols)
+    df = format_cols(df, schema)
+    df = df.fillna("UNKNOWN")
+    return df
+
+
 # CLEAN
 def clean(df, dataset_name: str):
     if dataset_name == "pax":
@@ -290,6 +322,8 @@ def clean(df, dataset_name: str):
         return clean_schedule(df)
     elif dataset_name == "product_catalog":
         return clean_product_catalog(df)
+    elif dataset_name == "bank":
+        return clean_bank(df)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -340,6 +374,12 @@ def clean_product_catalog(df):
     df = drop_invalid_nan(df, required_cols)
     return df
 
+def clean_bank(df):
+    df = drop_duplicates(df)
+    required_cols = ["card_number_prefix"]
+    df = drop_invalid_nan(df, required_cols)
+    return df
+
 
 # SAVE
 def save(df, dataset_name: str):
@@ -376,12 +416,12 @@ def load_city_mapping(path):
     with open(path, "r") as f:
         return json.load(f)
 
-def load_file(type: str, prefix: str):
+def load_file(type: str, prefix: str, delimiter=None):
     files = list(RAW_PATH.glob(prefix))
     dfs = []
     for file in files:
         if type == "csv":
-            df = pd.read_csv(file, delimiter=";")
+            df = pd.read_csv(file, delimiter=delimiter)
         else:
             df = pd.read_excel(file)
         dfs.append(df)
