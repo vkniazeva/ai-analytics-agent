@@ -31,6 +31,7 @@ def main():
     fact_pax()
     fact_payment()
     fact_sales()
+    fact_wastage()
 
 
 # DIMS
@@ -39,8 +40,11 @@ def dim_product():
                .drop_duplicates(subset=["item_id"]))
 
     sales_products = read_parquet("sales")[["item_id", "item_category"]].drop_duplicates(subset=["item_id"])
+    wastage_products = read_parquet("wastage")[["item_id", "item_category", "item_type"]].drop_duplicates(subset=["item_id"])
 
-    missing_product = sales_products[~sales_products["item_id"].isin(set(catalog["item_id"]))]
+    other_products = pd.concat([sales_products, wastage_products], ignore_index=True).drop_duplicates(subset=["item_id"])
+    missing_product = other_products[~other_products["item_id"].isin(set(catalog["item_id"]))]
+    missing_product["source"] = "UNKNOWN"
     dim_product_df = pd.concat([catalog, missing_product], ignore_index=True).drop_duplicates(subset=["item_id"])
     dim_product_df = generate_hash_key(dim_product_df, ["item_id"], "product_sur_id")
 
@@ -51,9 +55,9 @@ def dim_flights():
     keys = ["flight_no", "date", "time", "origin", "destination"]
 
     schedule_df = (read_parquet("schedule")[keys + ["line_id"]].drop_duplicates(subset=keys))
-    schedule_df["source"] = "KNOWN_DATA"
+    schedule_df["source"] = "KNOWN"
 
-    files = ["sales", "payments", "pax"]
+    files = ["sales", "payments", "pax", "wastage"]
     other_df = pd.concat([read_parquet(f)[keys] for f in files], ignore_index=True).drop_duplicates(subset=keys)
     unknown_df = other_df.merge(schedule_df[keys], on=keys, how="left", indicator=True)
     unknown_df = unknown_df[unknown_df["_merge"] == "left_only"].drop(columns="_merge")
@@ -61,7 +65,7 @@ def dim_flights():
     unknown_df["source"] = "UNKNOWN"
 
     dim_flight_df = pd.concat([schedule_df, unknown_df], ignore_index=True)
-    dim_flight_df = generate_hash_key(dim_flight_df, ["flight_no", "date"], "flight_sur_id")
+    dim_flight_df = generate_hash_key(dim_flight_df, ["flight_no", "date", "time", "origin", "destination"], "flight_sur_id")
 
     print(dim_flight_df.head(5))
     save_dwh(dim_flight_df, "flight", "dim")
@@ -150,6 +154,19 @@ def fact_sales():
     print(fact_sales_df.head(5))
     save_dwh(fact_sales_df, "sales", "fact")
 
+def fact_wastage():
+    wastage_df = read_parquet("wastage")
+    wastage_df = map_flight_id(wastage_df)
+    wastage_df = map_dim(wastage_df, "product", "item_id", "product_sur_id", "item_key")
+
+    wastage_df["date_key"] = pd.to_datetime(wastage_df["date"], format="%YY-%m-%d").dt.strftime("%Y%m%d").astype(int)
+
+    fact_wastage_df = wastage_df[["flight_key", "date_key", "item_key",
+                                   "load_quantity", "sold_quantity", "wastage_quantity", "fresh_wastage_quantity"]]
+    fact_wastage_df = generate_hash_key(fact_wastage_df, ["flight_key", "item_key", "date_key"], "wastage_sur_id")
+    print(fact_wastage_df.head(5))
+    save_dwh(fact_wastage_df, "wastage", "fact")
+
 
 # UTILS
 def read_parquet(file: str):
@@ -164,26 +181,23 @@ def save_dwh(df, file: str, type: str):
     file_path = DWH_PATH / f"{type}_{file}.parquet"
     df.to_parquet(file_path)
 
-# def generate_int_key(df, column_name: str):
-#     df = df.reset_index(drop=True)
-#     df[column_name] = df.index + 1
-#     return df
-
 def generate_hash_key(df, cols, new_col):
     df[new_col] = (
         df[cols]
+        .fillna("UNKNOWN")
         .astype(str)
         .agg("|".join, axis=1)
         .apply(lambda x: hashlib.md5(x.encode()).hexdigest())
     )
     return df
 
+def normalize_time(col):
+    return col.fillna("UNKNOWN").astype(str)
+
 def map_flight_id(df):
-    df["flight_key"] = df["flight_no"] + "_" + df["date"].astype(str) + "_" + df[
-        "time"].astype(str)
     dim_flight = read_dim("flight")
-    dim_flight["flight_key"] = dim_flight["flight_no"] + "_" + dim_flight["date"].astype(str) + "_" + dim_flight[
-        "time"].astype(str)
+    df["flight_key"] = df["flight_no"] + "_" + df["date"].astype(str) + "_" + normalize_time(df["time"]) + "_" + df["origin"].astype(str) + "_" + df["destination"].astype(str)
+    dim_flight["flight_key"] = dim_flight["flight_no"] + "_" + dim_flight["date"].astype(str) + "_" + normalize_time(dim_flight["time"]) + "_" + dim_flight["origin"].astype(str) + "_" + dim_flight["destination"].astype(str)
     flight_mapping = dim_flight.set_index("flight_key")["flight_sur_id"]
     df["flight_key"] = df["flight_key"].map(flight_mapping)
     return df

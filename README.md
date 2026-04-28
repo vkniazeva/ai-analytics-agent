@@ -118,6 +118,7 @@ This layer includes:
 - cleaned and standardized column names
 - normalized data types (dates, numeric fields)
 - deterministic anonymization of sensitive fields
+- cross-source enrichment (e.g. wastage time mapped from schedule based on flight_no + date)
 - validation and basic quality checks
   - dropping duplicates
   - dropping nan records if present in the required (keys) columns
@@ -217,16 +218,14 @@ TBD
 - 19/04/2026 - all dims are done (data warehouse step)
 - 26/04/2026 - added additioinal dims, created fact_payment, fact_pax (TBD add dates refs)
 - 27/04/2026 - added fact_sales, dim card extended with the bank info
+- 29/04/2026 - added fact_wastage, enriched wastage with time from schedule, extended dim_product and dim_flight to cover wastage sources
 
 
 Completed:
 - data loading
 - data staging
 - dims creation
-
-In progress:
-- data warehouse:
-  - fact wastage (the last))
+- data warehouse (all facts done)
   
 To be done next:
 - data presentation with marts
@@ -235,7 +234,8 @@ To be done next:
 
 ### Data processed examples
 
-Flight data example:
+<details>
+<summary>Flight data example</summary>
 
 ```
   flight_no scheduled_date scheduled_time    origin destination class  pax
@@ -245,8 +245,11 @@ Flight data example:
 3     AB715     2026-01-01          13:30  city_003    city_001     Y  174
 4     AB141     2026-01-01          22:40  city_001    city_004     Y  174
 ```
+</details>
 
-Payment data example:
+<details>
+<summary>Payment data example</summary>
+
 ```
    session_id  load_id                               slip_id flight_no  
 0  1770300067     9808  00012190-7095-400d-b3bb-acee00d07eba     AB064   
@@ -269,8 +272,10 @@ Payment data example:
 3             14.0             457828      visa  
 4              7.0                NaN       NaN   
 ```
+</details>
 
-Sales data example: 
+<details>
+<summary>Sales data example</summary>
 
 ```
    session_id load_id flight_no    origin destination  \
@@ -294,37 +299,38 @@ Sales data example:
 3    7.0         1              5.0              2.0 2026-03-12  07:00:00  
 4    3.0         1              3.0              0.0 2026-03-12  07:00:00 
 ```
+</details>
 
-All datasets are anonymized using deterministic mappings.
-Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
-To see an example of mapping file, `data/config/mapping_example.json` can be used.
-
-Wastage data example:
+<details>
+<summary>Wastage data example</summary>
 
 ```
-  load_id flight_no scheduled_date   item_category item_id item_type  \
-0    8825     AB452     2026-01-02   Hot Beverages  151281   Ambient   
-1    8825     AB452     2026-01-02   Hot Beverages  151282   Ambient   
-2    8825     AB452     2026-01-02          Snacks  100744   Ambient   
-3    8825     AB452     2026-01-02  Cold Beverages  151287   Ambient   
-4    8825     AB452     2026-01-02  Cold Beverages  151288   Ambient   
+  load_id flight_no   item_category item_id item_type  load_quantity  \
+0    8825     AB452   Hot Beverages  151281   Ambient              5   
+1    8825     AB452   Hot Beverages  151282   Ambient              5   
+2    8825     AB452          Snacks  100744   Ambient              4   
+3    8825     AB452  Cold Beverages  151287   Ambient              6   
+4    8825     AB452  Cold Beverages  151288   Ambient              6   
 
-   load_quantity  quantity  wastage_quantity  fresh_wastage_quantity  \
-0              5         0                 0                       0   
-1              5         0                 0                       0   
-2              4         4                 0                       0   
-3              6         1                 0                       0   
-4              6         1                 0                       0   
+   sold_quantity  wastage_quantity  fresh_wastage_quantity    origin  \
+0              0                 0                       0  city_001   
+1              0                 0                       0  city_001   
+2              4                 0                       0  city_001   
+3              1                 0                       0  city_001   
+4              1                 0                       0  city_001   
 
-     origin destination  
-0  city_001    city_014  
-1  city_001    city_014  
-2  city_001    city_014  
-3  city_001    city_014  
-4  city_001    city_014  
+  destination        date      time  
+0    city_014  2026-01-02  18:45:00  
+1    city_014  2026-01-02  18:45:00  
+2    city_014  2026-01-02  18:45:00  
+3    city_014  2026-01-02  18:45:00  
+4    city_014  2026-01-02  18:45:00  
 ```
+</details>
 
-Schedule data example:
+<details>
+<summary>Schedule data example</summary>
+
 ```
   line_id flight_no    origin destination order_id       date      time
 0  204153     AB133  city_001    city_002   8777.0 2026-01-01  22:40:00
@@ -333,8 +339,11 @@ Schedule data example:
 3  206623     AB126  city_011    city_001     <NA> 2026-01-01  21:30:00
 4  211470     AB112  city_016    city_001     <NA> 2026-01-01  06:05:00
 ```
+</details>
 
-Product Catalog data:
+<details>
+<summary>Product Catalog data</summary>
+
 ```
     item_id status      item_category         is_food  item_type      price 
 0   VGSW    Active      BOL Products          True    Fresh Product   17.0 
@@ -343,8 +352,11 @@ Product Catalog data:
 3   203167  Active      Gifts and Essentials  False   Product         60.0 
 4   109789  Inactive    Gifts and Essentials  True    Ambiant Product 40.0
 ```
+</details>
 
-Bank data:
+<details>
+<summary>Bank data</summary>
+
 ```  
 card_number_prefix          brand   type category   issuer country_short  \
 0              19627  PRIVATE LABEL  DEBIT  UNKNOWN  UNKNOWN           USA   
@@ -360,42 +372,50 @@ card_number_prefix          brand   type category   issuer country_short  \
 3  United States  
 4  United States  
 ```
+</details>
+
+All datasets are anonymized using deterministic mappings.
+Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
+To see an example of mapping file, `data/config/mapping_example.json` can be used.
 
 ### Dim data examples
 
-_dim_product_
-```
-  item_id    status         item_category  is_food        item_type  \
-0    VGSW    Active          BOL Products     True    Fresh Product   
-1  150486  Inactive        Cold Beverages     True  Ambiant Product   
-2  109792    Active                Snacks     True  Ambiant Product   
-3  203167    Active  Gifts and Essentials    False          Product   
-4  109789  Inactive  Gifts and Essentials     True  Ambiant Product   
+<details>
+<summary>dim_product</summary>
 
-                     product_sur_id  
-0  b44f73bacabcef8ce63ce1d60e21a4f8  
-1  ea579e44dd150e5ba6680d6a3cee26b4  
-2  fbd5478e90f9f68d038f7fa5996bcbff  
-3  9806a5b9c7557ba40b34a967c88a70a5  
-4  ead848fd8f4b78e1fdc32c4a5088e15e       
 ```
-_dim_flight_
+  item_id    status         item_category  is_food        item_type source                    product_sur_id
+0    VGSW    Active          BOL Products     True    Fresh Product    NaN  b44f73bacabcef8ce63ce1d60e21a4f8
+1  150486  Inactive        Cold Beverages     True  Ambiant Product    NaN  ea579e44dd150e5ba6680d6a3cee26b4
+2  109792    Active                Snacks     True  Ambiant Product    NaN  fbd5478e90f9f68d038f7fa5996bcbff
+3  203167    Active  Gifts and Essentials    False          Product    NaN  9806a5b9c7557ba40b34a967c88a70a5
+4  109789  Inactive  Gifts and Essentials     True  Ambiant Product    NaN  ead848fd8f4b78e1fdc32c4a5088e15e
 ```
-  flight_no        date      time    origin destination line_id      source  \
-0     AB133  2026-01-01  22:40:00  city_001    city_002  204153  KNOWN_DATA   
-1     AB714  2026-01-01  09:00:00  city_001    city_003  204461  KNOWN_DATA   
-2     AB141  2026-01-01  22:40:00  city_001    city_004  204493  KNOWN_DATA   
-3     AB126  2026-01-01  21:30:00  city_011    city_001  206623  KNOWN_DATA   
-4     AB112  2026-01-01  06:05:00  city_016    city_001  211470  KNOWN_DATA   
+</details>
+
+<details>
+<summary>dim_flight</summary>
+
+```
+  flight_no        date      time    origin destination line_id source  \
+0     AB133  2026-01-01  22:40:00  city_001    city_002  204153  KNOWN   
+1     AB714  2026-01-01  09:00:00  city_001    city_003  204461  KNOWN   
+2     AB141  2026-01-01  22:40:00  city_001    city_004  204493  KNOWN   
+3     AB126  2026-01-01  21:30:00  city_011    city_001  206623  KNOWN   
+4     AB112  2026-01-01  06:05:00  city_016    city_001  211470  KNOWN   
 
                       flight_sur_id  
-0  3631901103e5f460541040525ed22bef  
-1  111422977e25fcbd60dfabb0a7291d2f  
-2  b6c1028337e26a4124708ed87ac8bb05  
-3  ea6a3221a4679ff3b4e6e6d248dff55c  
-4  06f74a1815abcd701b3bd3b6f2040d45     
+0  694fa2985cc3ae0462375f02a11b44fa  
+1  71df231209d639151134db619a347a6d  
+2  0bd254b8a52a80757bd5034fab1c44ad  
+3  104f3554a39949be7e6b4a1443b0c0c3  
+4  df8c3fb8baa27183866d20bfcedbfa54 
 ```
-_dim_date_
+</details>
+
+<details>
+<summary>dim_date</summary>
+
 ```
         date  date_sur_id  year  month  day  weekday weekday_name  is_weekend
 0 2025-01-01     20250101  2025      1    1        2    Wednesday       False
@@ -404,7 +424,11 @@ _dim_date_
 3 2025-01-04     20250104  2025      1    4        5     Saturday        True
 4 2025-01-05     20250105  2025      1    5        6       Sunday        True
 ```
-_dim_load_
+</details>
+
+<details>
+<summary>dim_load</summary>
+
 ```
   line_id  load_id                       load_sur_id
 0  204153     8777  9399e0b02c73fcc14cd11d9b4e685f2e
@@ -413,116 +437,84 @@ _dim_load_
 3  206623  UNKNOWN  696b031073e74bf2cb98e5ef201d4aa3
 4  211470  UNKNOWN  696b031073e74bf2cb98e5ef201d4aa3
 ```
+</details>
 
-_dim_card_
+<details>
+<summary>dim_card</summary>
+
 ```
-  card_number_prefix card_type       brand    type    category  \
-0             457828      visa        VISA  CREDIT     UNKNOWN   
-1             552191        mc  MASTERCARD  CREDIT    PLATINUM   
-2             518084        mc  MASTERCARD  CREDIT     UNKNOWN   
-3             552102        mc  MASTERCARD  CREDIT  WORLD CARD   
-4             454946      visa        VISA  CREDIT     UNKNOWN   
-
-                      issuer country_short               country  \
-0          UNITED BANK, LTD.           ARE  United Arab Emirates   
-1          EMIRATES NBD BANK           ARE  United Arab Emirates   
-2  JPMORGAN CHASE BANK, N.A.           USA         United States   
-3      HSBC BANK MIDDLE EAST           ARE  United Arab Emirates   
-4                 WOORI BANK           KOR           SOUTH KOREA   
-
-                       card_sur_key  
-0  eff1c240dd7293f6c2fc5d393ed2c853  
-1  71e838e87dcf21205855fd66b09fb549  
-2  9e289bcadae37d6f2a126d5a014b0490  
-3  e711247de3b8e9731ee9eace2882beab  
-4  f68aed6f87b6edb83f9ebf49f1909880  
+  card_number_prefix card_type       brand    type    category                     issuer country_short               country                      card_sur_key
+0             457828      visa        VISA  CREDIT     UNKNOWN          UNITED BANK, LTD.           ARE  United Arab Emirates  eff1c240dd7293f6c2fc5d393ed2c853
+1             552191        mc  MASTERCARD  CREDIT    PLATINUM          EMIRATES NBD BANK           ARE  United Arab Emirates  71e838e87dcf21205855fd66b09fb549
+2             518084        mc  MASTERCARD  CREDIT     UNKNOWN  JPMORGAN CHASE BANK, N.A.           USA         United States  9e289bcadae37d6f2a126d5a014b0490
+3             552102        mc  MASTERCARD  CREDIT  WORLD CARD      HSBC BANK MIDDLE EAST           ARE  United Arab Emirates  e711247de3b8e9731ee9eace2882beab
+4             454946      visa        VISA  CREDIT     UNKNOWN                 WOORI BANK           KOR           SOUTH KOREA  f68aed6f87b6edb83f9ebf49f1909880
 ```
+</details>
 
-_dim_session_
+<details>
+<summary>dim_session</summary>
+
 ```
-  session_id  is_offline_mode                    session_sur_id
+   session_id  is_offline_mode                    session_sur_id
 0  1770300067            False  0ba06e52adc81a2286f934d1ae1be26d
 2  1770648682            False  53c11a1608cc174944c0067c422acda9
 3  1772159581             True  50fbb9f6ae94adec6275f6a1061f1a0f
 4  1771332937            False  58ecf3e2745839b4bfb067ccc8fd5885
 5   770805007             True  9d8749a7d66a71c247a9a5264a5ed437
 ```
+</details>
 
-_fact_pax_
+### Fact data examples
+
+<details>
+<summary>fact_pax</summary>
+
 ```
-                         flight_key class  pax_qty  date_key  \
-0  3631901103e5f460541040525ed22bef     Y      174  20260101   
-1  ca711382fcaad8a669fa09fb96c98cf8     Y      166  20260102   
-2  111422977e25fcbd60dfabb0a7291d2f     Y      125  20260101   
-3  9569980288b95e36e1e37cbff37fa91f     Y      174  20260101   
-4  b6c1028337e26a4124708ed87ac8bb05     Y      174  20260101   
-
-                         pax_sur_id  
-0  320110a380795bb8296d09854d665c15  
-1  c8ce489ae492fd5201725c76a65b8fab  
-2  d811c47ac126aaf69f956684147d724f  
-3  918f22795db9d0a32fe46ead65573422  
-4  9a6a4c82b513f5863efe575b095f3b0e  
+                         flight_key class  pax_qty  date_key                        pax_sur_id
+0  3631901103e5f460541040525ed22bef     Y      174  20260101  320110a380795bb8296d09854d665c15
+1  ca711382fcaad8a669fa09fb96c98cf8     Y      166  20260102  c8ce489ae492fd5201725c76a65b8fab
+2  111422977e25fcbd60dfabb0a7291d2f     Y      125  20260101  d811c47ac126aaf69f956684147d724f
+3  9569980288b95e36e1e37cbff37fa91f     Y      174  20260101  918f22795db9d0a32fe46ead65573422
+4  b6c1028337e26a4124708ed87ac8bb05     Y      174  20260101  9a6a4c82b513f5863efe575b095f3b0e
 ```
+</details>
 
-_fact_payment_
+<details>
+<summary>fact_payment</summary>
+
 ```
-                          payment_id                               slip_id  \
-0  61760892f03d467c5998be1b3603e5ea  00012190-7095-400d-b3bb-acee00d07eba   
-1  61760892f03d467c5998be1b3603e5ea  00012190-7095-400d-b3bb-acee00d07eba   
-2  93931a5985d157eef6f7b6ae15ecdc52  000133f5-95fb-4a8d-909a-ecaafa7d30af   
-3  3ea11fa175a31e7af43180cc9b7ab711  0002f70b-08ad-4215-b6ac-6e8d58759a1a   
-4  2b6356220d4d26143a6a54e538b74d05  0003dfe8-db9c-45d0-831b-04a8c803dd28   
-
-                        session_key                        flight_key  \
-0  0ba06e52adc81a2286f934d1ae1be26d  179f98714611110a7420907b16aad82c   
-1  0ba06e52adc81a2286f934d1ae1be26d  179f98714611110a7420907b16aad82c   
-2  53c11a1608cc174944c0067c422acda9  d495b0d4011aef6de2d2f88696bcc012   
-3  50fbb9f6ae94adec6275f6a1061f1a0f  6313a3cbe34398e296a84f99041a2d0b   
-4  58ecf3e2745839b4bfb067ccc8fd5885  eaa159caac51166500226c9b028874eb   
-
-  sales_type payment_type  purchase_amount                          card_key  \
-0       Sale         Cash              0.6                               NaN   
-1       Sale         Cash              1.0                               NaN   
-2       Sale         Cash             28.0                               NaN   
-3       Sale         Card             14.0  eff1c240dd7293f6c2fc5d393ed2c853   
-4       Sale         Cash              7.0                               NaN   
-
-   date_key  
-0  20260205  
-1  20260205  
-2  20260209  
-3  20260227  
-4  20260217  
+                         payment_id                               slip_id                       session_key                        flight_key sales_type payment_type  purchase_amount                          card_key  date_key
+0  61760892f03d467c5998be1b3603e5ea  00012190-7095-400d-b3bb-acee00d07eba  0ba06e52adc81a2286f934d1ae1be26d  179f98714611110a7420907b16aad82c       Sale         Cash              0.6                               NaN  20260205
+1  61760892f03d467c5998be1b3603e5ea  00012190-7095-400d-b3bb-acee00d07eba  0ba06e52adc81a2286f934d1ae1be26d  179f98714611110a7420907b16aad82c       Sale         Cash              1.0                               NaN  20260205
+2  93931a5985d157eef6f7b6ae15ecdc52  000133f5-95fb-4a8d-909a-ecaafa7d30af  53c11a1608cc174944c0067c422acda9  d495b0d4011aef6de2d2f88696bcc012       Sale         Cash             28.0                               NaN  20260209
+3  3ea11fa175a31e7af43180cc9b7ab711  0002f70b-08ad-4215-b6ac-6e8d58759a1a  50fbb9f6ae94adec6275f6a1061f1a0f  6313a3cbe34398e296a84f99041a2d0b       Sale         Card             14.0  eff1c240dd7293f6c2fc5d393ed2c853  20260227
+4  2b6356220d4d26143a6a54e538b74d05  0003dfe8-db9c-45d0-831b-04a8c803dd28  58ecf3e2745839b4bfb067ccc8fd5885  eaa159caac51166500226c9b028874eb       Sale         Cash              7.0                               NaN  20260217
 ```
+</details>
 
-_fact_sales_
+<details>
+<summary>fact_sales</summary>
+
 ```
-                        session_key                        flight_key  \
-0  cfd2e10e565673f1781448f5bcc5c720  a00ac4804b446daaf5dc71839c92e85c   
-1  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961   
-2  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961   
-3  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961   
-4  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961   
+                        session_key                        flight_key                               slip_id sales_type                       product_key  price  quantity  purchase_amount  discount_amount  date_key                          sales_id
+0  cfd2e10e565673f1781448f5bcc5c720  a00ac4804b446daaf5dc71839c92e85c  47828792-6f3c-491b-8fc1-e5eaaacc5a12       Sale  256739145ec11049c9deba2041b9e640    7.0         1              5.0              2.0  20260310  48da602762e181cfcdb392f051803ac4
+1  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961  60c36a4c-a427-4848-85e1-3db02dae031e       Sale  92beef6f29f3a4b88f8b278c9e9672ea    7.0         1              7.0              0.0  20260312  c51032d6da1894daa65b4fd474f395d1
+2  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961  bd00b09a-73db-4bb0-b870-7b0fee6841b2       Sale  20d4c2d722de8dd0f1ec4e055d9b639e    5.0         1              5.0              0.0  20260312  9ef1ab985deef4c741fcdffe8281a2c9
+3  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961  a526c1c0-a769-4a81-81a0-37fb3c737622       Sale  796cc52f7bf5d4aa53a48400ce43f0b1    7.0         1              5.0              2.0  20260312  50e08e707f610dbae1b926b54870e4a7
+4  b74409fe219c8c3ee986b4cbd0521e4a  b697c28c79e6cc17861087e48852b961  dcf6f5c7-6648-485d-b111-c177e61126b3       Sale  e24193c120eb4ec01bacb50550a3e7c5    3.0         1              3.0              0.0  20260312  b9254cd740d8556c2a6cdb4bb901aa62
+```
+</details>
 
-                                slip_id sales_type  \
-0  47828792-6f3c-491b-8fc1-e5eaaacc5a12       Sale   
-1  60c36a4c-a427-4848-85e1-3db02dae031e       Sale   
-2  bd00b09a-73db-4bb0-b870-7b0fee6841b2       Sale   
-3  a526c1c0-a769-4a81-81a0-37fb3c737622       Sale   
-4  dcf6f5c7-6648-485d-b111-c177e61126b3       Sale   
+<details>
+<summary>fact_wastage</summary>
 
-                        product_key  price  quantity  purchase_amount  \
-0  256739145ec11049c9deba2041b9e640    7.0         1              5.0   
-1  92beef6f29f3a4b88f8b278c9e9672ea    7.0         1              7.0   
-2  20d4c2d722de8dd0f1ec4e055d9b639e    5.0         1              5.0   
-3  796cc52f7bf5d4aa53a48400ce43f0b1    7.0         1              5.0   
-4  e24193c120eb4ec01bacb50550a3e7c5    3.0         1              3.0   
-
-   discount_amount  date_key                          sales_id  
-0              2.0  20260310  48da602762e181cfcdb392f051803ac4  
-1              0.0  20260312  c51032d6da1894daa65b4fd474f395d1  
-2              0.0  20260312  9ef1ab985deef4c741fcdffe8281a2c9  
-3              2.0  20260312  50e08e707f610dbae1b926b54870e4a7  
-4              0.0  20260312  b9254cd740d8556c2a6cdb4bb901aa62
-```  
+```
+                         flight_key  date_key                          item_key  load_quantity  sold_quantity  wastage_quantity  fresh_wastage_quantity                    wastage_sur_id
+0  67132b166753d7db27a9751b29f868fb  20260102  4b56d8097e3227a51b5b779f9e554423              5              0                 0                       0  5230fa80117cb1aa3c46634a56b0e0f7
+1  67132b166753d7db27a9751b29f868fb  20260102  61013cc8996ee79c39723b65ecda7870              5              0                 0                       0  4592c65353880f4c17fe5a341a4811ef
+2  67132b166753d7db27a9751b29f868fb  20260102  733485290e5b6bf18beb568e11b72f22              4              4                 0                       0  b584f4b7fe42ab80ca61eed78550f7fb
+3  67132b166753d7db27a9751b29f868fb  20260102  bba63b003bf531cbb64fa835064887c2              6              1                 0                       0  fcb9d9086028e7db3e21e56af82149d8
+4  67132b166753d7db27a9751b29f868fb  20260102  38edd7d5a7535016c8f914a7a871ad0d              6              1                 0                       0  b957d9d54fcf299f250103fa4cb869f0
+```
+</details>  

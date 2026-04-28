@@ -233,6 +233,7 @@ def standardize_wastage(df):
     df = process_flight_data(df)
     df["date"] = pd.to_datetime(df["scheduled_date"], format="%d-%m-%Y").dt.date
     df = format_cols(df, schema)
+    df = map_time_from_schedule(df)
     return df
 
 def standardize_schedule(df):
@@ -410,6 +411,14 @@ def process_flight_data(df):
     cities_map = load_city_mapping(CONFIG_PATH)
     df["origin"] = df["origin"].map(cities_map).fillna("UNKNOWN")
     df["destination"] = df["destination"].map(cities_map).fillna("UNKNOWN")
+    return df
+
+def map_time_from_schedule(df):
+    schedule = load_file("csv", "schedule*", delimiter=";")
+    schedule = standardize_schedule(schedule)
+    schedule = schedule[["flight_no", "date", "time"]].drop_duplicates(subset=["flight_no", "date"])
+    df = df.merge(schedule, on=["flight_no", "date"], how="left")
+    df = df.drop("scheduled_date", axis=1)
     return df
 
 def load_city_mapping(path):
