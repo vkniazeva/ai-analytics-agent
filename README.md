@@ -208,7 +208,36 @@ The final analytical layer (data marts) will follow a star schema design, consis
 
 ## Setup
 
-TBD
+### Prerequisites
+- Python 3.13+
+- Docker
+
+### Installation
+
+1. Clone the repository
+2. Create a virtual environment and install dependencies:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. Copy the environment file and adjust if needed:
+```bash
+cp .env.example .env
+```
+
+4. Start PostgreSQL:
+```bash
+docker compose up -d
+```
+
+### Running
+
+```bash
+python app.py          # load existing parquet data into PostgreSQL
+python app.py --etl    # run full ETL pipeline (staging + DWH) then load into PostgreSQL
+```
 
 ## Changelog and State
 - 15/04/2026 - added sales data preprocessing and data formatting
@@ -219,6 +248,7 @@ TBD
 - 26/04/2026 - added additioinal dims, created fact_payment, fact_pax (TBD add dates refs)
 - 27/04/2026 - added fact_sales, dim card extended with the bank info
 - 29/04/2026 - added fact_wastage, enriched wastage with time from schedule, extended dim_product and dim_flight to cover wastage sources
+- 29/04/2026 - added PostgreSQL via Docker, bulk loading with COPY FROM, app entry point with --etl flag
 
 
 Completed:
@@ -226,6 +256,7 @@ Completed:
 - data staging
 - dims creation
 - data warehouse (all facts done)
+- PostgreSQL storage with Docker
   
 To be done next:
 - data presentation with marts
@@ -385,11 +416,11 @@ To see an example of mapping file, `data/config/mapping_example.json` can be use
 
 ```
   item_id    status         item_category  is_food        item_type source                    product_sur_id
-0    VGSW    Active          BOL Products     True    Fresh Product    NaN  b44f73bacabcef8ce63ce1d60e21a4f8
-1  150486  Inactive        Cold Beverages     True  Ambiant Product    NaN  ea579e44dd150e5ba6680d6a3cee26b4
-2  109792    Active                Snacks     True  Ambiant Product    NaN  fbd5478e90f9f68d038f7fa5996bcbff
-3  203167    Active  Gifts and Essentials    False          Product    NaN  9806a5b9c7557ba40b34a967c88a70a5
-4  109789  Inactive  Gifts and Essentials     True  Ambiant Product    NaN  ead848fd8f4b78e1fdc32c4a5088e15e
+0    VGSW    Active          BOL Products     True    Fresh Product    KNOWN  b44f73bacabcef8ce63ce1d60e21a4f8
+1  150486  Inactive        Cold Beverages     True  Ambiant Product    KNOWN  ea579e44dd150e5ba6680d6a3cee26b4
+2  109792    Active                Snacks     True  Ambiant Product    KNOWN  fbd5478e90f9f68d038f7fa5996bcbff
+3  203167    Active  Gifts and Essentials    False          Product    KNOWN  9806a5b9c7557ba40b34a967c88a70a5
+4  109789  Inactive  Gifts and Essentials     True  Ambiant Product    KNOWN  ead848fd8f4b78e1fdc32c4a5088e15e
 ```
 </details>
 

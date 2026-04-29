@@ -3,3 +3,5 @@ fastapi
 uvicorn
 pyarrow
 openpyxl
+psycopg2-binary
+python-dotenv
