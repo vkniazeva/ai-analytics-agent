@@ -106,14 +106,14 @@ def standardize_pax(df):
         "Origin": "origin",
         "Destination": "destination",
         "Class": "class",
-        "PAX": "pax_qty"
+        "PAX": "pax_quantity"
     }
     schema = {
         "flight_no": "string",
         "origin": "string",
         "destination": "string",
         "class": "string",
-        "pax_qty": "int"
+        "pax_quantity": "int"
     }
     df = rename_cols(df, renamed_cols)
     df = process_flight_data(df)
@@ -135,7 +135,7 @@ def standardize_sales(df):
         "Item Category": "item_category",
         "Item Reference": "item_id",
         "Item Price": "price",
-        "Qty Sold": "quantity",
+        "Qty Sold": "sold_quantity",
         "Sale Amount": "purchase_amount",
         "Promotion Discount": "discount_amount",
     }
@@ -151,7 +151,7 @@ def standardize_sales(df):
         "item_category": "string",
         "item_id": "string",
         "price": "float",
-        "quantity": "int",
+        "sold_quantity": "int",
         "purchase_amount": "float",
         "discount_amount": "float"
     }
@@ -330,18 +330,18 @@ def clean(df, dataset_name: str):
 
 def clean_pax(df):
     df = drop_duplicates(df)
-    required_cols = ["flight_no", "date", "pax_qty"]
+    required_cols = ["flight_no", "date", "pax_quantity"]
     df = drop_invalid_nan(df, required_cols)
-    not_negative_cols = ["pax_qty"]
+    not_negative_cols = ["pax_quantity"]
     df = filter_negatives(df, not_negative_cols)
     df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df
 
 def clean_sales(df):
     df = drop_duplicates(df)
-    required_cols = ["session_id", "load_id", "flight_no", "date", "slip_id", "sales_type", "item_id", "quantity", "purchase_amount"]
+    required_cols = ["session_id", "load_id", "flight_no", "date", "slip_id", "sales_type", "item_id", "sold_quantity", "purchase_amount"]
     df = drop_invalid_nan(df, required_cols)
-    not_negative_cols = ["quantity", "price", "discount_amount"]
+    not_negative_cols = ["sold_quantity", "price", "discount_amount"]
     df = filter_negatives(df, not_negative_cols)
     df = df[(df["date"] >= START_DATE) & (df["date"] <= END_DATE)]
     return df

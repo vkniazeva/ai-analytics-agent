@@ -249,6 +249,7 @@ python app.py --etl    # run full ETL pipeline (staging + DWH) then load into Po
 - 27/04/2026 - added fact_sales, dim card extended with the bank info
 - 29/04/2026 - added fact_wastage, enriched wastage with time from schedule, extended dim_product and dim_flight to cover wastage sources
 - 29/04/2026 - added PostgreSQL via Docker, bulk loading with COPY FROM, app entry point with --etl flag
+- 01/05/2026 - added PK/FK constraints with indexes, presentation layer with marts (sales performance, product sales, flight sales), mart SQL views in DB
 
 
 Completed:
@@ -257,9 +258,11 @@ Completed:
 - dims creation
 - data warehouse (all facts done)
 - PostgreSQL storage with Docker
+- presentation layer (marts)
+- PK/FK constraints and indexes
   
 To be done next:
-- data presentation with marts
+- superset setup and connection to PostgreSQL
 
 ## Other
 

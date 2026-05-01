@@ -86,9 +86,9 @@ def dim_date():
 
 def dim_load():
     load_df = read_parquet("schedule")[["line_id", "load_id"]].drop_duplicates()
-    load_df = load_df.drop_duplicates(subset=["line_id"])
+    load_df = load_df.drop_duplicates(subset=["line_id", "load_id"])
     load_df["load_id"] = load_df["load_id"].astype("string").fillna("UNKNOWN")
-    load_df = generate_hash_key(load_df, ["load_id"], "load_sur_id")
+    load_df = generate_hash_key(load_df, ["line_id", "load_id"], "load_sur_id")
 
     print(load_df.head(5))
     save_dwh(load_df, "load", "dim")
@@ -119,8 +119,8 @@ def fact_pax():
     pax_df = read_parquet("pax")
     pax_df = map_flight_id(pax_df)
     pax_df["date_key"] = pd.to_datetime(pax_df["date"], format="%YY-%m-%d").dt.strftime("%Y%m%d").astype(int)
-    fact_pax_df = pax_df[["flight_key", "class", "pax_qty", "date_key"]]
-    fact_pax_df = generate_hash_key(fact_pax_df, ["flight_key", "class", "date_key"], "pax_sur_id")
+    fact_pax_df = pax_df[["flight_key", "class", "pax_quantity", "date_key"]]
+    fact_pax_df = generate_hash_key(fact_pax_df, ["flight_key", "class", "date_key", "pax_quantity"], "pax_sur_id")
 
     print(fact_pax_df.head(5))
     save_dwh(fact_pax_df, "pax", "fact")
@@ -132,11 +132,10 @@ def fact_payment():
     payment_df = map_dim(payment_df, "session", "session_id", "session_sur_id", "session_key")
     payment_df = map_dim(payment_df, "card", "card_number_prefix", "card_sur_key", "card_key")
 
-    payment_df = generate_hash_key(payment_df, ["slip_id", "payment_type"], "payment_id")
     payment_df["date_key"] = pd.to_datetime(payment_df["date"], format="%YY-%m-%d").dt.strftime("%Y%m%d").astype(int)
 
-    fact_payment_df = payment_df[["payment_id", "slip_id", "session_key", "flight_key", "sales_type", "payment_type", "purchase_amount", "card_key", "date_key"]]
-
+    fact_payment_df = payment_df[["slip_id", "session_key", "flight_key", "sales_type", "payment_type", "purchase_amount", "card_key", "date_key"]]
+    fact_payment_df = generate_hash_key(fact_payment_df, ["slip_id", "flight_key", "sales_type", "payment_type", "purchase_amount"], "payment_sur_id")
     print(fact_payment_df.head(5))
     save_dwh(fact_payment_df, "payment", "fact")
 
@@ -149,8 +148,8 @@ def fact_sales():
     sales_df["date_key"] = pd.to_datetime(sales_df["date"], format="%YY-%m-%d").dt.strftime("%Y%m%d").astype(int)
 
     fact_sales_df = sales_df[["session_key", "flight_key", "slip_id", "sales_type", "product_key", "price",
-                              "quantity", "purchase_amount", "discount_amount", "date_key"]]
-    fact_sales_df = generate_hash_key(fact_sales_df, ["slip_id", "product_key", "price"], "sales_id")
+                              "sold_quantity", "purchase_amount", "discount_amount", "date_key"]]
+    fact_sales_df = generate_hash_key(fact_sales_df, ["slip_id", "product_key", "price", "purchase_amount"], "sales_sur_id")
     print(fact_sales_df.head(5))
     save_dwh(fact_sales_df, "sales", "fact")
 
@@ -163,7 +162,8 @@ def fact_wastage():
 
     fact_wastage_df = wastage_df[["flight_key", "date_key", "item_key",
                                    "load_quantity", "sold_quantity", "wastage_quantity", "fresh_wastage_quantity"]]
-    fact_wastage_df = generate_hash_key(fact_wastage_df, ["flight_key", "item_key", "date_key"], "wastage_sur_id")
+    fact_wastage_df = fact_wastage_df.drop_duplicates()
+    fact_wastage_df = generate_hash_key(fact_wastage_df, ["flight_key", "item_key", "date_key", "load_quantity", "sold_quantity", "wastage_quantity", "fresh_wastage_quantity"], "wastage_sur_id")
     print(fact_wastage_df.head(5))
     save_dwh(fact_wastage_df, "wastage", "fact")
 

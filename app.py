@@ -1,6 +1,6 @@
 import argparse
 
-from etl import staging, dwh, db
+from etl import staging, dwh, presentation, db
 
 
 def main():
@@ -13,9 +13,14 @@ def main():
         staging.main()
         print("Running DWH pipeline...")
         dwh.main()
+        print("Running presentation layer...")
+        presentation.main()
 
     print("Loading data into PostgreSQL...")
     db.load_all()
+
+    print("Creating marts...")
+    db.create_marts()
 
 
 if __name__ == "__main__":
