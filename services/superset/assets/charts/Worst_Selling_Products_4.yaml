@@ -1,0 +1,109 @@
+slice_name: Worst Selling Products
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  datasource: 2__table
+  viz_type: echarts_timeseries_bar
+  x_axis: item_id
+  time_grain_sqla: P1D
+  x_axis_sort: SUM(total_sales)
+  x_axis_sort_asc: true
+  x_axis_sort_series: name
+  x_axis_sort_series_ascending: true
+  metrics:
+  - expressionType: SIMPLE
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: total_sales
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 12
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: NUMERIC
+      type_generic: 0
+      verbose_name: null
+      warning_markdown: null
+    aggregate: SUM
+    sqlExpression: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: SUM(total_sales)
+    optionName: metric_id4h2ukzx6_eiwdden83n
+  groupby: []
+  adhoc_filters: []
+  timeseries_limit_metric:
+    expressionType: SIMPLE
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: total_sales
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 12
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: NUMERIC
+      type_generic: 0
+      verbose_name: null
+      warning_markdown: null
+    aggregate: SUM
+    sqlExpression: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: SUM(total_sales)
+    optionName: metric_7g4ff425mrh_ujlmeelipke
+  order_desc: false
+  row_limit: 10
+  truncate_metric: true
+  show_empty_columns: true
+  comparison_type: values
+  annotation_layers: []
+  forecastPeriods: 10
+  forecastInterval: 0.8
+  orientation: horizontal
+  x_axis_title: ''
+  x_axis_title_margin: 15
+  y_axis_title: Total Sales
+  y_axis_title_margin: 30
+  y_axis_title_position: Left
+  sort_series_type: sum
+  sort_series_ascending: true
+  color_scheme: supersetColors
+  show_value: true
+  only_total: true
+  show_legend: true
+  legendType: scroll
+  legendOrientation: top
+  x_axis_time_format: smart_date
+  xAxisLabelRotation: 0
+  y_axis_format: SMART_NUMBER
+  logAxis: false
+  minorSplitLine: false
+  truncateXAxis: true
+  truncateYAxis: false
+  y_axis_bounds:
+  - null
+  - null
+  rich_tooltip: true
+  tooltipTimeFormat: smart_date
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: '{"datasource":{"id":2,"type":"table"},"force":false,"queries":[{"filters":[],"extras":{"time_grain_sqla":"P1D","having":"","where":""},"applied_time_extras":{},"columns":[{"timeGrain":"P1D","columnType":"BASE_AXIS","sqlExpression":"item_id","label":"item_id","expressionType":"SQL"}],"metrics":[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"total_sales","description":null,"expression":null,"filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(total_sales)","optionName":"metric_id4h2ukzx6_eiwdden83n"}],"orderby":[[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"total_sales","description":null,"expression":null,"filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(total_sales)","optionName":"metric_7g4ff425mrh_ujlmeelipke"},true]],"annotation_layers":[],"row_limit":10,"series_columns":[],"series_limit":0,"series_limit_metric":{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"total_sales","description":null,"expression":null,"filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(total_sales)","optionName":"metric_7g4ff425mrh_ujlmeelipke"},"order_desc":false,"url_params":{},"custom_params":{},"custom_form_data":{},"time_offsets":[],"post_processing":[{"operation":"pivot","options":{"index":["item_id"],"columns":[],"aggregates":{"SUM(total_sales)":{"operator":"mean"}},"drop_missing_columns":false}},{"operation":"sort","options":{"by":"SUM(total_sales)","ascending":true}},{"operation":"flatten"}]}],"form_data":{"datasource":"2__table","viz_type":"echarts_timeseries_bar","x_axis":"item_id","time_grain_sqla":"P1D","x_axis_sort":"SUM(total_sales)","x_axis_sort_asc":true,"x_axis_sort_series":"name","x_axis_sort_series_ascending":true,"metrics":[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"total_sales","description":null,"expression":null,"filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(total_sales)","optionName":"metric_id4h2ukzx6_eiwdden83n"}],"groupby":[],"adhoc_filters":[],"timeseries_limit_metric":{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"total_sales","description":null,"expression":null,"filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"verbose_name":null,"warning_markdown":null},"aggregate":"SUM","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"SUM(total_sales)","optionName":"metric_7g4ff425mrh_ujlmeelipke"},"order_desc":false,"row_limit":10,"truncate_metric":true,"show_empty_columns":true,"comparison_type":"values","annotation_layers":[],"forecastPeriods":10,"forecastInterval":0.8,"orientation":"horizontal","x_axis_title":"","x_axis_title_margin":15,"y_axis_title":"Total
+  Sales","y_axis_title_margin":30,"y_axis_title_position":"Left","sort_series_type":"sum","sort_series_ascending":true,"color_scheme":"supersetColors","show_value":true,"only_total":true,"show_legend":true,"legendType":"scroll","legendOrientation":"top","x_axis_time_format":"smart_date","xAxisLabelRotation":0,"y_axis_format":"SMART_NUMBER","logAxis":false,"minorSplitLine":false,"truncateXAxis":true,"truncateYAxis":false,"y_axis_bounds":[null,null],"rich_tooltip":true,"tooltipTimeFormat":"smart_date","extra_form_data":{},"dashboards":[1],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: 01fc78f2-b374-48c4-a64d-a299ace303bd
+version: 1.0.0
+dataset_uuid: 77376ea1-5ba1-4dc5-9b98-f0b063c2a0d4

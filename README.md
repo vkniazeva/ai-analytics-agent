@@ -210,34 +210,66 @@ The final analytical layer (data marts) will follow a star schema design, consis
 
 ### Prerequisites
 - Python 3.13+
-- Docker
+- Docker & Docker Compose
 
-### Installation
+### Environment Variables
 
-1. Clone the repository
-2. Create a virtual environment and install dependencies:
+Copy `.env.example` to `.env`. Default values:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5433` | PostgreSQL port (mapped from container 5432) |
+| `DB_NAME` | `ai_analytics` | Main database name |
+| `DB_USER` | `postgres` | Database user |
+| `DB_PASSWORD` | `postgres` | Database password |
+| `SUPERSET_DB_USER` | `superset` | Superset metadata DB user |
+| `SUPERSET_DB_PASSWORD` | `superset` | Superset metadata DB password |
+| `SUPERSET_DB_NAME` | `superset` | Superset metadata DB name |
+| `SUPERSET_SECRET_KEY` | `superset-secret-key-change-in-prod` | Superset secret key |
+| `SUPERSET_ADMIN_USER` | `admin` | Superset login username |
+| `SUPERSET_ADMIN_PASSWORD` | `admin` | Superset login password |
+
+### Installation & Running
+
 ```bash
+# 1. Clone and set up Python environment
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-3. Copy the environment file and adjust if needed:
-```bash
+# 2. Copy the environment file
 cp .env.example .env
+
+# 3. Start PostgreSQL
+docker compose up -d postgres
+
+# 4. Load data into PostgreSQL
+python app.py --etl    # full ETL: raw → staging → DWH → marts → DB
+# or
+python app.py          # load existing parquet files (data/dwh) into DB
+
+# 5. Start Superset (after data is loaded)
+docker compose up -d superset
+
+# 6. Open Superset
+open http://localhost:8088
+# Login: admin / admin
 ```
 
-4. Start PostgreSQL:
-```bash
-docker compose up -d
-```
+### Docker Services
 
-### Running
+| Service | Image | Port | Purpose |
+|---------|-------|------|---------|
+| `postgres` | postgres:16 | 5433 | Main data warehouse |
+| `superset_db` | postgres:16 | — | Superset metadata store |
+| `superset` | apache/superset:3.1.0 | 8088 | BI dashboards |
 
-```bash
-python app.py          # load existing parquet data into PostgreSQL
-python app.py --etl    # run full ETL pipeline (staging + DWH) then load into PostgreSQL
-```
+### Notes
+- Step 4 requires raw data files in `data/raw/` (not version-controlled)
+- Superset auto-imports dashboards from `services/superset/assets/` on first startup
+- To re-import assets, remove the superset container and volume: `docker compose down -v superset superset_db`
+- The "Performance Analytics" dashboard includes: Revenue dynamics by Week, Best/Worst Selling Products, Revenue by Products Share
 
 ## Changelog and State
 - 15/04/2026 - added sales data preprocessing and data formatting
@@ -249,7 +281,8 @@ python app.py --etl    # run full ETL pipeline (staging + DWH) then load into Po
 - 27/04/2026 - added fact_sales, dim card extended with the bank info
 - 29/04/2026 - added fact_wastage, enriched wastage with time from schedule, extended dim_product and dim_flight to cover wastage sources
 - 29/04/2026 - added PostgreSQL via Docker, bulk loading with COPY FROM, app entry point with --etl flag
-- 01/05/2026 - added PK/FK constraints with indexes, presentation layer with marts (sales performance, product sales, flight sales), mart SQL views in DB
+- 01/05/2026 - added PK/FK, indexes, presentation layer with marts 
+- 03/05/2026 - added Apache Superset with pre-configured dashboard for key metrics exploration
 
 
 Completed:
@@ -260,9 +293,11 @@ Completed:
 - PostgreSQL storage with Docker
 - presentation layer (marts)
 - PK/FK constraints and indexes
+- Superset BI layer with pre-configured dashboard
   
 To be done next:
-- superset setup and connection to PostgreSQL
+- Analytics API (FastAPI)
+- LLM agent integration
 
 ## Other
 

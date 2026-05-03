@@ -11,5 +11,42 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  superset_db:
+    image: postgres:16
+    container_name: superset_db
+    environment:
+      POSTGRES_DB: ${SUPERSET_DB_NAME}
+      POSTGRES_USER: ${SUPERSET_DB_USER}
+      POSTGRES_PASSWORD: ${SUPERSET_DB_PASSWORD}
+    volumes:
+      - superset_pgdata:/var/lib/postgresql/data
+
+  superset:
+    image: apache/superset:3.1.0
+    container_name: superset
+    environment:
+      SUPERSET_CONFIG_PATH: /app/superset_config.py
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_DB_USER: ${SUPERSET_DB_USER}
+      SUPERSET_DB_PASSWORD: ${SUPERSET_DB_PASSWORD}
+      SUPERSET_DB_NAME: ${SUPERSET_DB_NAME}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD}
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./services/superset/docker/superset_config.py:/app/superset_config.py
+      - ./services/superset/docker/superset-init.sh:/app/superset-init.sh
+      - ./services/superset/assets:/app/assets
+    depends_on:
+      - superset_db
+      - postgres
+    command: >
+      bash -c "
+        /app/superset-init.sh &&
+        superset run -h 0.0.0.0 -p 8088
+      "
+
 volumes:
   pgdata:
+  superset_pgdata:

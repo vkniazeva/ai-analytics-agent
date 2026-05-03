@@ -1,0 +1,13 @@
+database_name: db
+sqlalchemy_uri: postgresql+psycopg2://postgres:postgres@ai_analytics_db:5432/ai_analytics
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_file_upload: false
+extra:
+  allows_virtual_table_explore: true
+uuid: 8b7f5b08-71a6-4fb0-bcb3-2a0def854fd5
+version: 1.0.0

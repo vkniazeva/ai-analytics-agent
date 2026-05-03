@@ -1,0 +1,253 @@
+dashboard_title: Performance Analytics
+description: null
+css: ''
+slug: null
+certified_by: ''
+certification_details: ''
+published: false
+uuid: c61fb023-99ed-48ce-ac83-b31a488ec280
+position:
+  CHART-OP54XnFXBFL:
+    children: []
+    id: CHART-OP54XnFXBFL
+    meta:
+      chartId: 1
+      height: 50
+      sliceName: Revenue dynamics by Week
+      uuid: 32af0e3d-aa30-4b8c-9509-4a524882f560
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-ZdO89I1pbw7
+    type: CHART
+  CHART-explore-2-1:
+    children: []
+    id: CHART-explore-2-1
+    meta:
+      chartId: 2
+      height: 50
+      sliceName: Best Selling Products
+      uuid: 497157f4-87c6-4fb1-801c-92bf76932c42
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-4V5Cek7n9a
+    type: CHART
+  CHART-explore-3-1:
+    children: []
+    id: CHART-explore-3-1
+    meta:
+      chartId: 3
+      height: 62
+      sliceName: Revenue by Products Share
+      uuid: 998ac227-dfa6-4690-816a-c3fb7705be47
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-Ebj_-kSQmtn
+    type: CHART
+  CHART-explore-4-1:
+    children: []
+    id: CHART-explore-4-1
+    meta:
+      chartId: 4
+      height: 50
+      sliceName: Worst Selling Products
+      uuid: 01fc78f2-b374-48c4-a64d-a299ace303bd
+      width: 6
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-uPUSJxIHwNL
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-ZdO89I1pbw7
+    - ROW-Ebj_-kSQmtn
+    - ROW-4V5Cek7n9a
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: Performance Analytics
+    type: HEADER
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-4V5Cek7n9a:
+    children:
+    - CHART-explore-2-1
+    - CHART-explore-4-1
+    id: ROW-4V5Cek7n9a
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-Ebj_-kSQmtn:
+    children:
+    - CHART-explore-3-1
+    id: ROW-Ebj_-kSQmtn
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-ZdO89I1pbw7:
+    children:
+    - CHART-OP54XnFXBFL
+    id: ROW-ZdO89I1pbw7
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  chart_configuration:
+    '1':
+      id: 1
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 2
+        - 3
+        - 4
+    '2':
+      id: 2
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 3
+        - 4
+    '3':
+      id: 3
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 2
+        - 4
+    '4':
+      id: 4
+      crossFilters:
+        scope: global
+        chartsInScope:
+        - 1
+        - 2
+        - 3
+  global_chart_configuration:
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded: []
+    chartsInScope:
+    - 1
+    - 2
+    - 3
+    - 4
+  color_scheme: ''
+  refresh_frequency: 0
+  shared_label_colors:
+    '100553': '#B2B2B2'
+    '100744': '#666666'
+    '100801': '#666666'
+    '100921': '#5AC189'
+    '100922': '#ACE1C4'
+    '100923': '#E04355'
+    '101165': '#D3B3DA'
+    '101166': '#D1C6BC'
+    '101170': '#FCC700'
+    '101171': '#8FD3E4'
+    '101172': '#A38F79'
+    '102922': '#ACE1C4'
+    '102924': '#FF7F44'
+    '104400': '#FDE380'
+    '104614': '#666666'
+    '105113': '#9EE5E5'
+    '107642': '#FCC700'
+    '107644': '#FDE380'
+    '107645': '#8FD3E4'
+    '109779': '#9EE5E5'
+    '109792': '#454E7C'
+    '112944': '#FDE380'
+    '150116': '#D1C6BC'
+    '150131': '#B2B2B2'
+    '150204': '#FCC700'
+    '150205': '#5AC189'
+    '150206': '#3CCCCB'
+    '150413': '#FDE380'
+    '150461': '#454E7C'
+    '150486': '#1FA8C9'
+    '150547': '#666666'
+    '150650': '#A1A6BD'
+    '150932': '#9EE5E5'
+    '151119': '#A868B7'
+    '151199': '#A1A6BD'
+    '151217': '#8FD3E4'
+    '151218': '#A1A6BD'
+    '151226': '#FEC0A1'
+    '151231': '#B2B2B2'
+    '151232': '#ACE1C4'
+    '151280': '#454E7C'
+    '151281': '#EFA1AA'
+    '151282': '#FEC0A1'
+    '151287': '#E04355'
+    '151288': '#3CCCCB'
+    '200054': '#5AC189'
+    '200360': '#1FA8C9'
+    '200361': '#3CCCCB'
+    '202151': '#EFA1AA'
+    '203167': '#FEC0A1'
+    '203210': '#A868B7'
+    SUM(total_sales): '#1FA8C9'
+    Total Sales: '#dc3912'
+    T3L4D007: '#1FA8C9'
+    T3L4D121: '#ACE1C4'
+    C3L2W165: '#B2B2B2'
+    C3L2W140: '#9EE5E5'
+    T3L4D008: '#A868B7'
+    C3L2W159: '#FEC0A1'
+    T3L4D127: '#D1C6BC'
+    UpCai: '#A38F79'
+    T3L4D134: '#FF7F44'
+    C3L2W121: '#E04355'
+    T3L4D129: '#D3B3DA'
+    T3L4D120: '#454E7C'
+    T3L4S016: '#5AC189'
+    T3L4S120: '#FF7F44'
+    C3L2W160: '#FCC700'
+    C3L2W161: '#A868B7'
+    T3L4X010: '#3CCCCB'
+    C3L2D037: '#A38F79'
+    C3L2D042: '#8FD3E4'
+    C3L2D041: '#A1A6BD'
+    C3L2D044: '#EFA1AA'
+    C3L2W158: '#D3B3DA'
+    T3L4S119: '#1FA8C9'
+    Up1st: '#FF7F44'
+    C3L2D043: '#E04355'
+    Up2nd: '#A38F79'
+    up3rd: '#EFA1AA'
+    Up4th: '#D3B3DA'
+    T3L4S034: '#D1C6BC'
+  color_scheme_domain: []
+  expanded_slices: {}
+  label_colors: {}
+  timed_refresh_immune_slices: []
+  cross_filters_enabled: true
+  default_filters: '{}'
+version: 1.0.0
