@@ -48,25 +48,25 @@ This project simulates an airline retail analytics environment and demonstrates 
 ```mermaid
 flowchart LR
 
-    subgraph Data Layer
-        A[Raw Data\nCSV / Excel]
+    subgraph Data_Layer
+        A[Raw Data CSV Excel]
     end
 
-    subgraph Processing Layer
-        B[ETL (Pandas)\nCleaning / Standardization]
-        C[Processed Layer\nParquet]
-        D[DWH Layer\nStar Schema]
+    subgraph Processing_Layer
+        B[ETL Pandas Cleaning Standardization]
+        C[Processed Layer Parquet]
+        D[DWH Layer Star Schema]
         E[Marts Layer]
     end
 
-    subgraph Serving Layer
+    subgraph Serving_Layer
         F[PostgreSQL]
         G[Superset]
-        H[Analytics API\n(Future)]
+        H[Analytics API Future]
     end
 
-    subgraph AI Layer
-        I[LLM Agent\n(Future)]
+    subgraph AI_Layer
+        I[LLM Agent Future]
     end
 
     A --> B --> C --> D --> E --> F --> G
@@ -180,14 +180,14 @@ erDiagram
         int day
         int weekday
         string weekday_name
-        boolean is_weekend
+        string is_weekend
     }
 
     dim_flight {
         string flight_sur_id PK
         string flight_no
         date date
-        time time
+        string time
         string origin
         string destination
         string line_id
@@ -199,14 +199,14 @@ erDiagram
         string item_id
         string status
         string item_category
-        boolean is_food
+        string is_food
         string item_type
     }
 
     dim_session {
         string session_sur_id PK
         string session_id
-        boolean is_offline_mode
+        string is_offline_mode
     }
 
     dim_card {
