@@ -1,0 +1,6 @@
+item_id,status,item_category,is_food,item_type,price
+VGSW,Active,BOL Products,True,Fresh Product,17.0
+150486,Inactive,Cold Beverages,True,Ambiant Product,5.0
+109792,Active,Snacks,True,Ambiant Product,15.0
+203167,Active,Gifts and Essentials,False,Product,60.0
+109789,Inactive,Gifts and Essentials,True,Ambiant Product,40.0

@@ -18,6 +18,11 @@ def read_dwh(name: str):
 
 def save_mart(df, name: str):
     df.to_parquet(MARTS_PATH / f"{name}.parquet", index=False)
+    samples_path = MARTS_PATH / "samples"
+    samples_path.mkdir(exist_ok=True)
+    sample = df.head(5)
+    sample.to_csv(samples_path / f"{name}.csv", index=False)
+    sample.to_parquet(samples_path / f"{name}.parquet", index=False)
     print(f"  {name}: {len(df)} rows")
 
 

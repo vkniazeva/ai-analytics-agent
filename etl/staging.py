@@ -385,9 +385,13 @@ def clean_bank(df):
 # SAVE
 def save(df, dataset_name: str):
     print(dataset_name.upper())
-    print(df.head(5))
     path = PROCESSED_PATH / f"{dataset_name}.parquet"
     df.to_parquet(path)
+    samples_path = PROCESSED_PATH / "samples"
+    samples_path.mkdir(exist_ok=True)
+    sample = df.head(5)
+    sample.to_csv(samples_path / f"{dataset_name}.csv", index=False)
+    sample.to_parquet(samples_path / f"{dataset_name}.parquet", index=False)
 
 # UTILITIES
 def rename_cols(df, renamed_cols: dict):

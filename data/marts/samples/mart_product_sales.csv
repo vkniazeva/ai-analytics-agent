@@ -1,0 +1,6 @@
+item_id,item_category,item_type,is_food,total_sales,quantity_sold,total_transactions,attach_rate
+100553,Snacks,Ambiant Product,True,6328.0,1112,1112,1.0
+100744,Snacks,Ambiant Product,True,3980.0,731,731,1.0
+100801,Snacks,Ambiant Product,True,9086.0,1200,1200,1.0
+100921,Snacks,Ambiant Product,True,9744.0,1285,1285,1.0
+100922,Snacks,Ambiant Product,True,7014.0,932,932,1.0

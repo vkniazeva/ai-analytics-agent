@@ -210,8 +210,8 @@ def create_marts():
     try:
         cur = conn.cursor()
         for mart_name, query in MART_VIEWS.items():
-            cur.execute(sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(mart_name)))
-            cur.execute(sql.SQL("CREATE TABLE {} AS {}").format(
+            cur.execute(sql.SQL("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE").format(sql.Identifier(mart_name)))
+            cur.execute(sql.SQL("CREATE MATERIALIZED VIEW {} AS {}").format(
                 sql.Identifier(mart_name),
                 sql.SQL(query)
             ))
@@ -227,6 +227,23 @@ def create_marts():
         cur.close()
         conn.commit()
         print("All marts created successfully.")
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def refresh_marts():
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        for mart_name in MART_VIEWS:
+            cur.execute(sql.SQL("REFRESH MATERIALIZED VIEW {}").format(sql.Identifier(mart_name)))
+            print(f"  {mart_name}: refreshed")
+        cur.close()
+        conn.commit()
+        print("All marts refreshed successfully.")
     except Exception as e:
         conn.rollback()
         raise e

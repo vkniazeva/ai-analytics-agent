@@ -1,0 +1,6 @@
+item_id,status,item_category,is_food,item_type,source,product_sur_id
+VGSW,Active,BOL Products,True,Fresh Product,,b44f73bacabcef8ce63ce1d60e21a4f8
+150486,Inactive,Cold Beverages,True,Ambiant Product,,ea579e44dd150e5ba6680d6a3cee26b4
+109792,Active,Snacks,True,Ambiant Product,,fbd5478e90f9f68d038f7fa5996bcbff
+203167,Active,Gifts and Essentials,False,Product,,9806a5b9c7557ba40b34a967c88a70a5
+109789,Inactive,Gifts and Essentials,True,Ambiant Product,,ead848fd8f4b78e1fdc32c4a5088e15e

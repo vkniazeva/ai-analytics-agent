@@ -1,0 +1,6 @@
+flight_no,date,time,origin,destination,class,pax_quantity
+AB133,2026-01-01,22:40:00,city_001,city_002,Y,174
+AB134,2026-01-02,05:00:00,city_002,city_001,Y,166
+AB714,2026-01-01,09:00:00,city_001,city_003,Y,125
+AB715,2026-01-01,13:30:00,city_003,city_001,Y,174
+AB141,2026-01-01,22:40:00,city_001,city_004,Y,174

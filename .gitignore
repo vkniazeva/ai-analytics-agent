@@ -9,8 +9,11 @@ __pycache__/
 # Data
 data/raw/*
 data/processed/*
+!data/processed/samples/
 data/dwh/*
+!data/dwh/samples/
 data/marts/*
+!data/marts/samples/
 data/config/cities_mapping.json
 
 # OS

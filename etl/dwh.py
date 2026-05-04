@@ -180,6 +180,11 @@ def read_dim(file: str):
 def save_dwh(df, file: str, type: str):
     file_path = DWH_PATH / f"{type}_{file}.parquet"
     df.to_parquet(file_path)
+    samples_path = DWH_PATH / "samples"
+    samples_path.mkdir(exist_ok=True)
+    sample = df.head(5)
+    sample.to_csv(samples_path / f"{type}_{file}.csv", index=False)
+    sample.to_parquet(samples_path / f"{type}_{file}.parquet", index=False)
 
 def generate_hash_key(df, cols, new_col):
     df[new_col] = (

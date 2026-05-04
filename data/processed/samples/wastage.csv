@@ -1,0 +1,6 @@
+load_id,flight_no,item_category,item_id,item_type,load_quantity,sold_quantity,wastage_quantity,fresh_wastage_quantity,origin,destination,date,time
+8825,AB452,Hot Beverages,151281,Ambient,5,0,0,0,city_001,city_014,2026-01-02,18:45:00
+8825,AB452,Hot Beverages,151282,Ambient,5,0,0,0,city_001,city_014,2026-01-02,18:45:00
+8825,AB452,Snacks,100744,Ambient,4,4,0,0,city_001,city_014,2026-01-02,18:45:00
+8825,AB452,Cold Beverages,151287,Ambient,6,1,0,0,city_001,city_014,2026-01-02,18:45:00
+8825,AB452,Cold Beverages,151288,Ambient,6,1,0,0,city_001,city_014,2026-01-02,18:45:00

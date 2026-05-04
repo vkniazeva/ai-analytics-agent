@@ -1,0 +1,6 @@
+session_id,load_id,slip_id,flight_no,origin,destination,is_offline_mode,sales_type,payment_type,purchase_amount,card_number_prefix,card_type,date,time
+1770300067,9808,00012190-7095-400d-b3bb-acee00d07eba,AB064,city_019,city_001,,Sale,Cash,0.6,,,2026-02-05,21:15:00
+1770300067,9808,00012190-7095-400d-b3bb-acee00d07eba,AB064,city_019,city_001,,Sale,Cash,1.0,,,2026-02-05,21:15:00
+1770648682,9914,000133f5-95fb-4a8d-909a-ecaafa7d30af,AB064,city_019,city_001,,Sale,Cash,28.0,,,2026-02-09,21:15:00
+1772159581,10394,0002f70b-08ad-4215-b6ac-6e8d58759a1a,AB131,city_001,city_002,True,Sale,Card,14.0,457828,visa,2026-02-27,07:00:00
+1771332937,10128,0003dfe8-db9c-45d0-831b-04a8c803dd28,AB032,city_001,city_005,,Sale,Cash,7.0,,,2026-02-17,17:20:00
