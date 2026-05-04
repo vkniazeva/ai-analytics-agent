@@ -1,84 +1,77 @@
 # AI Analytics Agent
 
-An AI-powered analytics system that enables natural language exploration of structured business data using an ETL-based data pipeline, semantic analytics API, and LLM-driven insights generation.
+An AI-powered analytics system that enables natural language exploration of structured business data using a layered data 
+architecture, semantic analytics API, and LLM-driven insights generation.
 
-Table Of Content:
+---
+
+## Table Of Content
+
 1. [Business Context](#business-context)
 2. [Features](#features)
 3. [Architecture](#architecture)
-   - [Architecture Diagram](#architecture-diagram)
 4. [Data Handling](#data-handling)
-    - [Data Sources](#data-sources)
-    - [Data Processing Flow](#data-processing-flow)
-    - [Data Warehouse (Star Schema)](#data-warehouse-star-schema)
-    - [Data Model](#data-model)
-5. [Setup](#setup)
-6. [Changelog and State](#changelog-and-state)
-7. [Other](#other)
-    - [Data Samples](#data-samples)
-
+5. [Data Warehouse (Star Schema)](#data-warehouse-star-schema)
+6. [Data Model (ER Diagram)](#data-model-er-diagram)
+7. [Setup](#setup)
+8. [Changelog and State](#changelog-and-state)
+9. [Other](#other)
 
 ---
 
 ## Business Context
 
-Modern analytics systems often suffer from fragmented data sources, inconsistent metrics definitions, and high dependency on engineering teams for insights generation.
+Modern analytics systems often suffer from:
 
-This project simulates an airline retail analytics environment and demonstrates how an AI layer can simplify data exploration and reporting.
+* fragmented data sources
+* inconsistent metric definitions
+* strong dependency on engineers for insights
+
+This project simulates an airline retail analytics environment and demonstrates how an AI layer can simplify data exploration.
 
 ---
 
 ## Features
 
-- ETL pipeline for structured data preparation
-- Layered data architecture (raw → processed → marts)
-- Analytics API for metric computation
-- LLM-based natural language interface
-- Automated insight generation and reporting
+* Layered data architecture (raw → processed → DWH → marts)
+* ETL pipeline for structured data preparation
+* Star schema data warehouse
+* PostgreSQL serving layer
+* Superset BI dashboards
+* (Planned) Analytics API
+* (Planned) LLM-powered analytics agent
 
 ---
 
 ## Architecture
 
-The system follows a layered architecture:
-
-- **Data Layer**: raw transactional datasets (CSV → parquet)
-- **Processing Layer**: ETL transformations and data modeling
-- **Serving Layer**: Analytics API exposing business metrics
-- **AI Layer**: LLM-based agent for query interpretation and reasoning
-
-### Architecture Diagram
-
 ```mermaid
 flowchart LR
 
-    subgraph Data Layer
-        A[Raw Data\nCSV / Excel]
+    subgraph Data_Layer
+        A[Raw Data CSV Excel]
     end
 
-    subgraph Processing Layer
-        B[ETL Pipeline\nCleaning / Anonymization]
-        C[Processed Data\nParquet]
-        D[Data Marts\nStar Schema]
+    subgraph Processing_Layer
+        B[ETL Pandas Cleaning Standardization]
+        C[Processed Layer Parquet]
+        D[DWH Layer Star Schema]
+        E[Marts Layer]
     end
 
-    subgraph Serving Layer
-        E[Analytics API\nFastAPI]
+    subgraph Serving_Layer
+        F[PostgreSQL]
+        G[Superset]
+        H[Analytics API Future]
     end
 
-    subgraph AI Layer
-        F[LLM Agent\nBedrock / Local]
+    subgraph AI_Layer
+        I[LLM Agent Future]
     end
 
-    subgraph Output
-        G[Insights]
-        H[Visualizations]
-    end
-
-    A --> B --> C --> D --> E --> F
-    F --> G
-    F --> H
-```     
+    A --> B --> C --> D --> E --> F --> G
+    F --> H --> I
+```
 
 ---
 
@@ -86,80 +79,82 @@ flowchart LR
 
 ### Data Processing Flow
 
-Raw transactional data is transformed through an ETL pipeline:
+| Step | Layer            | Description                                   |
+| ---- | ---------------- | --------------------------------------------- |
+| 1    | `data/raw`       | Raw CSV / Excel files                         |
+| 2    | `data/processed` | Cleaned & standardized data (temporary layer) |
+| 3    | `data/dwh`       | Star schema (dims + facts)                    |
+| 4    | `data/marts`     | Aggregated analytical tables                  |
+| 5    | PostgreSQL       | Serving layer                                 |
 
-| #  | Step                                     | Project structure | ETL step      |
-|----|------------------------------------------|-------------------|---------------|
-| 1  | Data ingestion (CSV → raw layer)         | `data/raw`        | E (extract)   |
-| 2  | Data cleaning, validation, anonymization | `data/processed`  | T (transform) |
-| 3  | Data modeling into analytical marts      | `data/marts`      | L (load)      |
+---
 
-Output: data in a star schema in columnar format (Parquet) stored in `data/marts`
+### ⚠️ Important Note on Processing Layer
+
+The **processed layer (Parquet + Pandas)** is currently a **temporary implementation**.
+
+Planned evolution:
+
+* Replace Pandas transformations with **SQL-based transformations inside the data warehouse**
+* Move toward:
+
+  * ELT instead of ETL
+  * dbt / SQL models (or similar approach)
+  * database-native joins and aggregations
+
+> Pandas is used here as a prototyping tool, not as a final data processing engine.
 
 ---
 
 ### Data Sources
 
-The system is based on synthetic airline retail operations data:
+Synthetic airline retail data:
 
-- Flight sales transactions (products sold per flight)
-- Passenger occupancy data
-- Payment transactions (card/cash simulation)
-- Inventory / stock levels per flight
-- Flight schedule and route data
+* Flight sales transactions
+* Passenger data
+* Payment transactions
+* Inventory / wastage data
+* Flight schedule
+* Product catalog
+* Bank metadata
 
 ---
 
 ### Data Processing
-As an intermediate step, raw data is transformed into a processed layer stored in Parquet format.
 
-This layer includes:
-- cleaned and standardized column names
-- normalized data types (dates, numeric fields)
-- deterministic anonymization of sensitive fields
-- cross-source enrichment (e.g. wastage time mapped from schedule based on flight_no + date)
-- validation and basic quality checks
-  - dropping duplicates
-  - dropping nan records if present in the required (keys) columns
-  - dropping negative values if present in the required (numeric) columns
+The processed layer ensures:
 
-The processed layer preserves the original granularity of the data while ensuring consistency and usability for downstream analytics.
+* standardized column names
+* consistent data types
+* anonymization
+* cross-source enrichment
+* basic data quality checks:
+
+  * drop duplicates
+  * drop invalid NULLs
+  * filter negative values
 
 ---
 
-### Data Warehouse (Star Schema)
+## Data Warehouse (Star Schema)
 
-The analytical layer follows a star schema design with clearly defined grains for each fact table.
+### Dimensions
 
-Key modeling principles:
-- Facts capture atomic business events at defined grain levels
-- Dimensions provide descriptive context
-- Independent business contexts (flight, session, load) are modeled as separate dimensions
-- Degenerate dimensions (e.g. slip_id) are stored directly in fact tables
+* `dim_date`
+* `dim_flight`
+* `dim_product`
+* `dim_session`
+* `dim_card`
+* `dim_load`
 
-The following dim tables are part of the data warehouse:
+### Facts
 
-- dim_date - a calendar table with additional dates info (year, weekday etc.)
-- dim_load - a table with the loading data (catering route id as connected flights to be catered together)
-and loading id (in particular set of trolleys to be dispatched to a plane)
-- dim_product - a table with the product catalog
-- dim_flight - a table with the flight data incl. line_id (a catering line
-- dim_session - a table with the sales session data
-- dim_card - a table with the card data (will be enhanced with the basic bank info)
+* `fact_sales`
+* `fact_payment`
+* `fact_pax`
+* `fact_wastage`
 
-
-- fact_payment
-- fact_pax
-- fact_sale
-- fact_wastage
-
-### Fact Table Grains
-
-- fact_pax → flight + class
-- fact_payment → payment event (multiple records per slip_id possible)
-- fact_sales → item-level transaction (line item)
-- fact_wastage → product per flight instance
-
+Dimension-Fact Relationships:
 ```mermaid
 flowchart LR
 
@@ -180,136 +175,138 @@ flowchart LR
 
     dim_date --> fact_sales
 ```
+---
 
-### Notes on Data Modeling
+### Fact Table Grains
 
-- `slip_id` is not unique and represents a receipt, not a payment transaction
-- multiple payment records can exist per `slip_id`
-- therefore, `payment_id` is introduced as a surrogate key in `fact_payment`
-- `slip_id` is treated as a degenerate dimension
+| Table        | Grain                  |
+| ------------ | ---------------------- |
+| fact_sales   | item-level transaction |
+| fact_payment | payment event          |
+| fact_pax     | flight + class         |
+| fact_wastage | product per flight     |
 
 ---
 
-### Data Model
+## Data Model (ER Diagram)
 
-The final analytical layer (data marts) will follow a star schema design, consisting of fact and dimension tables optimized for analytical queries and LLM-driven exploration.
+![Data Model](docs/diagrams/data_model.svg)
 
 ---
 
+## Data Marts
+
+![Data Marts](docs/diagrams/data_marts.svg)
+
+
+
+### Available Marts
+
+* `mart_sales_performance`
+* `mart_product_sales`
+* `mart_flight_sales`
+
+---
 
 ## Key Design Decisions
 
-- Star schema chosen for analytical simplicity and performance
-- Surrogate keys used for all dimensions
-- Fact tables retain business grain and avoid over-normalization
-- Multiple independent dimensions (flight, session, load) modeled explicitly
-- Columnar storage (Parquet) used for efficient analytical queries
+* Star schema for analytical clarity
+* Surrogate keys for all entities
+* Degenerate dimensions (e.g. `slip_id`)
+* Columnar storage (Parquet)
+* PostgreSQL as serving layer
+* Superset as BI layer
+
+---
 
 ## Setup
 
 ### Prerequisites
-- Python 3.13+
-- Docker & Docker Compose
 
-### Environment Variables
+* Python 3.13+
+* Docker & Docker Compose
 
-Copy `.env.example` to `.env`. Default values:
+---
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DB_HOST` | `localhost` | PostgreSQL host |
-| `DB_PORT` | `5433` | PostgreSQL port (mapped from container 5432) |
-| `DB_NAME` | `ai_analytics` | Main database name |
-| `DB_USER` | `postgres` | Database user |
-| `DB_PASSWORD` | `postgres` | Database password |
-| `SUPERSET_DB_USER` | `superset` | Superset metadata DB user |
-| `SUPERSET_DB_PASSWORD` | `superset` | Superset metadata DB password |
-| `SUPERSET_DB_NAME` | `superset` | Superset metadata DB name |
-| `SUPERSET_SECRET_KEY` | `superset-secret-key-change-in-prod` | Superset secret key |
-| `SUPERSET_ADMIN_USER` | `admin` | Superset login username |
-| `SUPERSET_ADMIN_PASSWORD` | `admin` | Superset login password |
-
-### Installation & Running
+### Installation & Run
 
 ```bash
-# 1. Clone and set up Python environment
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# 2. Copy the environment file
-cp .env.example .env
-
-# 3. Start PostgreSQL
+# Start database
 docker compose up -d postgres
 
-# 4. Load data into PostgreSQL
-python app.py --etl    # full ETL: raw → staging → DWH → marts → DB
-# or
-python app.py          # load existing parquet files (data/dwh) into DB
+# Run full pipeline
+python app.py --etl
 
-# 5. Start Superset (after data is loaded)
+# Start Superset
 docker compose up -d superset
-
-# 6. Open Superset
-open http://localhost:8088
-# Login: admin / admin
 ```
 
-### Docker Services
+Open:
 
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| `postgres` | postgres:16 | 5433 | Main data warehouse |
-| `superset_db` | postgres:16 | — | Superset metadata store |
-| `superset` | apache/superset:3.1.0 | 8088 | BI dashboards |
+```
+http://localhost:8088
+```
 
-### Notes
-- Step 4 requires raw data files in `data/raw/` (not version-controlled)
-- Superset auto-imports dashboards from `services/superset/assets/` on first startup
-- To re-import assets, remove the superset container and volume: `docker compose down -v superset superset_db`
-- The "Performance Analytics" dashboard includes: Revenue dynamics by Week, Best/Worst Selling Products, Revenue by Products Share
+Login:
+
+```
+admin / admin
+```
+
+---
 
 ## Changelog and State
-- 15/04/2026 - added sales data preprocessing and data formatting
-- 16/04/2026 - code refactoring and completed data loading, standardization 
-- 17/04/2026 - completed data preprocessing step
-- 18/04/2026 - added product catalog to the etl processing + dim_product 
-- 19/04/2026 - all dims are done (data warehouse step)
-- 26/04/2026 - added additioinal dims, created fact_payment, fact_pax (TBD add dates refs)
-- 27/04/2026 - added fact_sales, dim card extended with the bank info
-- 29/04/2026 - added fact_wastage, enriched wastage with time from schedule, extended dim_product and dim_flight to cover wastage sources
-- 29/04/2026 - added PostgreSQL via Docker, bulk loading with COPY FROM, app entry point with --etl flag
-- 01/05/2026 - added PK/FK, indexes, presentation layer with marts 
-- 03/05/2026 - added Apache Superset with pre-configured dashboard for key metrics exploration
 
+### Completed
 
-Completed:
-- data loading
-- data staging
-- dims creation
-- data warehouse (all facts done)
-- PostgreSQL storage with Docker
-- presentation layer (marts)
-- PK/FK constraints and indexes
-- Superset BI layer with pre-configured dashboard
-  
-To be done next:
-- Analytics API (FastAPI)
-- LLM agent integration
+* ETL pipeline
+* Data staging layer
+* Data warehouse (star schema)
+* PostgreSQL loading (COPY)
+* PK/FK constraints and indexes
+* Data marts
+* Superset dashboards
+
+---
+
+### In Progress
+
+* Data model stabilization
+* Migration from Pandas → SQL transformations
+
+---
+
+### Next Steps
+
+* Analytics API (FastAPI)
+* Semantic layer (metrics definitions)
+* LLM agent integration
+
+---
 
 ## Other
 
 ### Data Samples
 
-Sample CSV files (first 5 rows) are auto-generated during ETL and stored alongside the data:
+| Layer     | Location                  |
+| --------- | ------------------------- |
+| Processed | `data/processed/samples/` |
+| DWH       | `data/dwh/samples/`       |
+| Marts     | `data/marts/samples/`     |
 
-| Layer | Location | Contents |
-|-------|----------|----------|
-| Processed | `data/processed/samples/` | pax, sales, payments, wastage, schedule, product_catalog, bank |
-| DWH | `data/dwh/samples/` | dim_product, dim_flight, dim_date, dim_load, dim_card, dim_session, fact_pax, fact_payment, fact_sales, fact_wastage |
-| Marts | `data/marts/samples/` | mart_sales_performance, mart_product_sales, mart_flight_sales |
+---
 
-All datasets are anonymized using deterministic mappings.
-Sensitive mappings (e.g. city codes) are externalized and excluded from version control.
-To see an example of mapping file, `data/config/mapping_example.json` can be used.  
+### Notes
+
+* Data is anonymized
+* Mapping configs are external
+* Raw data is not version-controlled
+* Processed layer is temporary and will be replaced with SQL-based transformations
+
+### Regenerating Diagrams
+
+PlantUML sources are in `docs/diagrams/`. To regenerate SVGs:
+
+```bash
+plantuml -tsvg docs/diagrams/*.puml
+```
