@@ -1,0 +1,40 @@
+@startuml architecture
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Data Layer" {
+    [Raw Data\nCSV / Excel] as raw
+}
+
+package "Processing Layer" {
+    [ETL Pipeline\nCleaning / Anonymization] as etl
+    [Processed Data\nParquet] as processed
+    [Data Marts\nStar Schema] as marts
+}
+
+package "Serving Layer" {
+    [Analytics API\nFastAPI] as api
+}
+
+package "AI Layer" {
+    [LLM Agent\nBedrock / Local] as llm
+}
+
+package "Output" {
+    [Insights] as insights
+    [Visualizations] as viz
+}
+
+raw --> etl
+etl --> processed
+processed --> marts
+marts --> api
+api --> llm
+llm --> insights
+llm --> viz
+
+@enduml

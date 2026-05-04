@@ -1,0 +1,34 @@
+@startuml data_marts
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+skinparam rectangle {
+    BackgroundColor<<fact>> #E8F4FD
+    BackgroundColor<<dim>> #FFF3E0
+    BackgroundColor<<mart>> #E8F5E9
+}
+
+rectangle "fact_sales" <<fact>>
+rectangle "fact_pax" <<fact>>
+rectangle "dim_product" <<dim>>
+rectangle "dim_flight" <<dim>>
+rectangle "dim_date" <<dim>>
+
+rectangle "mart_sales_performance" <<mart>>
+rectangle "mart_product_sales" <<mart>>
+rectangle "mart_flight_sales" <<mart>>
+
+fact_sales --> mart_sales_performance
+fact_sales --> mart_product_sales
+fact_sales --> mart_flight_sales
+
+fact_pax --> mart_flight_sales
+
+dim_product --> mart_product_sales
+dim_flight --> mart_flight_sales
+dim_date --> mart_sales_performance
+
+@enduml

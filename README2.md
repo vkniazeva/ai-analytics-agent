@@ -154,6 +154,27 @@ The processed layer ensures:
 * `fact_pax`
 * `fact_wastage`
 
+Dimension-Fact Relationships:
+```mermaid
+flowchart LR
+
+    dim_flight --> fact_pax
+    dim_flight --> fact_payment
+    dim_flight --> fact_sales
+    dim_flight --> fact_wastage
+
+    dim_session --> fact_payment
+    dim_session --> fact_sales
+
+    dim_product --> fact_sales
+    dim_product --> fact_wastage
+
+    dim_card --> fact_payment
+
+    dim_load --> fact_wastage
+
+    dim_date --> fact_sales
+```
 ---
 
 ### Fact Table Grains
@@ -169,141 +190,15 @@ The processed layer ensures:
 
 ## Data Model (ER Diagram)
 
-```mermaid
-erDiagram
-
-    dim_date {
-        int date_sur_id PK
-        date date
-        int year
-        int month
-        int day
-        int weekday
-        string weekday_name
-        string is_weekend
-    }
-
-    dim_flight {
-        string flight_sur_id PK
-        string flight_no
-        date date
-        string time
-        string origin
-        string destination
-        string line_id
-        string source
-    }
-
-    dim_product {
-        string product_sur_id PK
-        string item_id
-        string status
-        string item_category
-        string is_food
-        string item_type
-    }
-
-    dim_session {
-        string session_sur_id PK
-        string session_id
-        string is_offline_mode
-    }
-
-    dim_card {
-        string card_sur_key PK
-        string card_number_prefix
-        string card_type
-        string brand
-        string issuer
-        string country
-    }
-
-    dim_load {
-        string load_sur_id PK
-        string line_id
-        string load_id
-    }
-
-    fact_sales {
-        string sales_sur_id PK
-        string flight_key FK
-        string session_key FK
-        string product_key FK
-        string slip_id
-        string sales_type
-        float price
-        int sold_quantity
-        float purchase_amount
-        float discount_amount
-        int date_key FK
-    }
-
-    fact_payment {
-        string payment_sur_id PK
-        string flight_key FK
-        string session_key FK
-        string card_key FK
-        string slip_id
-        string payment_type
-        float purchase_amount
-        int date_key FK
-    }
-
-    fact_pax {
-        string pax_sur_id PK
-        string flight_key FK
-        string class
-        int pax_quantity
-        int date_key FK
-    }
-
-    fact_wastage {
-        string wastage_sur_id PK
-        string flight_key FK
-        string item_key FK
-        int load_quantity
-        int sold_quantity
-        int wastage_quantity
-        int fresh_wastage_quantity
-        int date_key FK
-    }
-
-    dim_flight ||--o{ fact_sales
-    dim_flight ||--o{ fact_payment
-    dim_flight ||--o{ fact_pax
-    dim_flight ||--o{ fact_wastage
-
-    dim_product ||--o{ fact_sales
-    dim_product ||--o{ fact_wastage
-
-    dim_session ||--o{ fact_sales
-    dim_session ||--o{ fact_payment
-
-    dim_card ||--o{ fact_payment
-
-    dim_date ||--o{ fact_sales
-    dim_date ||--o{ fact_payment
-    dim_date ||--o{ fact_pax
-    dim_date ||--o{ fact_wastage
-```
+![Data Model](docs/diagrams/data_model.svg)
 
 ---
 
 ## Data Marts
 
-```mermaid
-flowchart LR
+![Data Marts](docs/diagrams/data_marts.svg)
 
-    fact_sales --> mart_sales_performance
-    fact_sales --> mart_product_sales
-    fact_sales --> mart_flight_sales
 
-    fact_pax --> mart_flight_sales
-
-    dim_product --> mart_product_sales
-    dim_flight --> mart_flight_sales
-    dim_date --> mart_sales_performance
-```
 
 ### Available Marts
 
@@ -407,3 +302,11 @@ admin / admin
 * Mapping configs are external
 * Raw data is not version-controlled
 * Processed layer is temporary and will be replaced with SQL-based transformations
+
+### Regenerating Diagrams
+
+PlantUML sources are in `docs/diagrams/`. To regenerate SVGs:
+
+```bash
+plantuml -tsvg docs/diagrams/*.puml
+```

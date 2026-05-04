@@ -1,0 +1,144 @@
+@startuml data_model
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam linetype ortho
+
+skinparam entity {
+    BackgroundColor #F9F9F9
+    BorderColor #333333
+}
+
+entity "dim_flight" {
+    * flight_sur_id : VARCHAR(32) <<PK>>
+    --
+    flight_no : VARCHAR
+    date : DATE
+    time : TIME
+    origin : VARCHAR
+    destination : VARCHAR
+    line_id : VARCHAR
+    source : VARCHAR
+}
+
+entity "dim_product" {
+    * product_sur_id : VARCHAR(32) <<PK>>
+    --
+    item_id : VARCHAR
+    status : VARCHAR
+    item_category : VARCHAR
+    is_food : BOOLEAN
+    item_type : VARCHAR
+    source : VARCHAR
+}
+
+entity "dim_date" {
+    * date_sur_id : INTEGER <<PK>>
+    --
+    date : DATE
+    year : INTEGER
+    month : INTEGER
+    day : INTEGER
+    weekday : INTEGER
+    weekday_name : VARCHAR
+    is_weekend : BOOLEAN
+}
+
+entity "dim_session" {
+    * session_sur_id : VARCHAR(32) <<PK>>
+    --
+    session_id : BIGINT
+    is_offline_mode : BOOLEAN
+}
+
+entity "dim_card" {
+    * card_sur_key : VARCHAR(32) <<PK>>
+    --
+    card_number_prefix : VARCHAR
+    card_type : VARCHAR
+    brand : VARCHAR
+    type : VARCHAR
+    category : VARCHAR
+    issuer : VARCHAR
+    country_short : VARCHAR
+    country : VARCHAR
+}
+
+entity "dim_load" {
+    * load_sur_id : VARCHAR(32) <<PK>>
+    --
+    line_id : VARCHAR
+    load_id : VARCHAR
+}
+
+entity "fact_sales" {
+    * sales_id : VARCHAR(32) <<PK>>
+    --
+    session_key : VARCHAR(32) <<FK>>
+    flight_key : VARCHAR(32) <<FK>>
+    product_key : VARCHAR(32) <<FK>>
+    date_key : INTEGER <<FK>>
+    slip_id : UUID
+    sales_type : VARCHAR
+    price : NUMERIC
+    quantity : INTEGER
+    purchase_amount : NUMERIC
+    discount_amount : NUMERIC
+}
+
+entity "fact_payment" {
+    * payment_id : VARCHAR(32) <<PK>>
+    --
+    session_key : VARCHAR(32) <<FK>>
+    flight_key : VARCHAR(32) <<FK>>
+    card_key : VARCHAR(32) <<FK>>
+    date_key : INTEGER <<FK>>
+    slip_id : UUID
+    sales_type : VARCHAR
+    payment_type : VARCHAR
+    purchase_amount : NUMERIC
+}
+
+entity "fact_pax" {
+    * pax_sur_id : VARCHAR(32) <<PK>>
+    --
+    flight_key : VARCHAR(32) <<FK>>
+    date_key : INTEGER <<FK>>
+    class : VARCHAR
+    pax_quantity : INTEGER
+}
+
+entity "fact_wastage" {
+    * wastage_sur_id : VARCHAR(32) <<PK>>
+    --
+    flight_key : VARCHAR(32) <<FK>>
+    item_key : VARCHAR(32) <<FK>>
+    date_key : INTEGER <<FK>>
+    load_quantity : INTEGER
+    sold_quantity : INTEGER
+    wastage_quantity : INTEGER
+    fresh_wastage_quantity : INTEGER
+}
+
+dim_flight ||--o{ fact_sales
+dim_flight ||--o{ fact_payment
+dim_flight ||--o{ fact_pax
+dim_flight ||--o{ fact_wastage
+
+dim_session ||--o{ fact_sales
+dim_session ||--o{ fact_payment
+
+dim_product ||--o{ fact_sales
+dim_product ||--o{ fact_wastage
+
+dim_card ||--o{ fact_payment
+
+dim_date ||--o{ fact_sales
+dim_date ||--o{ fact_payment
+dim_date ||--o{ fact_pax
+dim_date ||--o{ fact_wastage
+
+dim_load ||--o{ fact_wastage
+
+@enduml
