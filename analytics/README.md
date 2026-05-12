@@ -82,7 +82,80 @@ analytics/
 
 ## Seeds
 
-Small lookup data (like `cities_mapping.json`) becomes a CSV in `seeds/`. Run `dbt seed` to load it as a table in the database. Reference in models with `{{ ref('cities_mapping') }}`.
+### What are seeds?
+
+Seeds are a **dbt concept** — small, static CSV files that dbt loads into the database as tables. 
+
+**Why seeds exist separately from raw data:**
+
+| Concept       | Purpose                                                 | Who loads it            |
+|---------------|---------------------------------------------------------|-------------------------|
+| Source (raw)  | Operational data from files/APIs — changes frequently   | `ingestion/load_raw.py` |
+| Model         | SQL transformation of data already in the DB            | dbt (`dbt run`)         |
+| Seed          | Small lookup/reference data that ships with the project | dbt (`dbt seed`)        |
+
+**Why use seeds instead of loading via the ingestion script?**
+
+1. **Version controlled with transformations** — the lookup CSV and the SQL that JOINs to it live together in `analytics/`
+2. **No external dependency** — `dbt seed` handles it; no separate Python step needed
+3. **Self-documenting** — anyone reading the project sees the reference data inline
+4. **Easy to update** — edit the CSV, run `dbt seed` again
+
+### Current seeds
+
+| File                        | Purpose                                          | Used by                                      |
+|-----------------------------|--------------------------------------------------|----------------------------------------------|
+| `seeds/cities_mapping.csv`  | Maps IATA airport codes to anonymized city IDs   | Staging models (origin/destination mapping)  |
+
+### Usage
+
+```bash
+dbt seed --profiles-dir .     # loads all CSVs in seeds/ as tables
+```
+
+Reference in SQL models:
+```sql
+LEFT JOIN {{ ref('cities_mapping') }} cm ON raw_table.origin = cm.iata_code
+```
+
+## Ingestion (raw data loading)
+
+The `ingestion/` folder contains the script that loads source files (CSV/Excel) into PostgreSQL's `raw` schema. This is the "E+L" in ELT — dbt handles the "T".
+
+```bash
+python -m ingestion.load_raw    # or: python ingestion/load_raw.py
+```
+
+**What it does:**
+- Reads all files from `data/raw/`
+- Concatenates monthly files (e.g. 3 months of sales → one `raw.sales` table)
+- Drops prohibited columns (`Staff ID`, `Staff Name` from sales — PII)
+- Loads into PostgreSQL `raw` schema with no transformations
+- Idempotent: safe to re-run (drops and recreates tables)
+
+**Raw tables created:**
+
+| Table                 | Source files                                      |
+|-----------------------|---------------------------------------------------|
+| `raw.pax`             | `pax_jan_2026.csv` … `pax_mar_2026.csv`           |
+| `raw.sales`           | `sales_jan_2026.xlsx` … `sales_mar_2026.xlsx`     |
+| `raw.payments`        | `payment_jan_2026.xlsx` … `payment_mar_2026.xlsx` |
+| `raw.wastage`         | `wastage_jan_2026.xlsx` … `wastage_mar_2026.xlsx` |
+| `raw.schedule`        | `schedule.csv`                                    |
+| `raw.product_catalog` | `product_catalog_all.xlsx`                        |
+| `raw.bank`            | `bank.csv`                                        | 
+
+## Full workflow
+
+```bash
+docker-compose up -d              # 1. Start PostgreSQL
+python -m ingestion.load_raw      # 2. Load raw files into DB
+cd analytics
+#TBD
+# dbt seed --profiles-dir .         # 3. Load seed lookup tables
+# dbt run --profiles-dir .          # 4. Run transformations (staging → dwh → marts)
+# dbt test --profiles-dir .         # 5. Validate data quality
+```
 
 ## Legacy Python code
 

@@ -1,0 +1,160 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw source data loaded from CSV/Excel files via ingestion/load_raw.py. No transformations applied."
+    schema: raw
+    tables:
+      - name: pax
+        description: "Passenger counts per flight leg"
+        columns:
+          - name: "Parent flight number"
+          - name: "Scheduled Date (Parent)"
+          - name: "Scheduled Time (Parent)"
+          - name: "Flight Number"
+          - name: "Scheduled Date"
+          - name: "Scheduled Time"
+          - name: "Origin"
+          - name: "Destination"
+          - name: "Class"
+          - name: "PAX"
+          - name: "Original Scheduled Date"
+          - name: "Original Scheduled Time"
+          - name: "Original Scheduled Date (Parent)"
+          - name: "Original Scheduled Time (Parent)"
+
+      - name: sales
+        description: "Onboard sales transactions"
+        columns:
+          - name: "Session No"
+          - name: "Last Updated"
+          - name: "Server sync time"
+          - name: "Synced Device SSN"
+          - name: "Barset No"
+          - name: "Order No"
+          - name: "Leg ID"
+          - name: "Scheduled Date"
+          - name: "Flight No"
+          - name: "Flight Origin"
+          - name: "Parent Flight Departure"
+          - name: "Flight Destination"
+          - name: "Registration Number"
+          - name: "Origin Station"
+          - name: "Session Creation DateTime"
+          - name: "Ticket ID"
+          - name: "Parent Ticket ID"
+          - name: "Ticket Closing DateTime"
+          - name: "Sales Type"
+          - name: "Item Category"
+          - name: "Item Reference"
+          - name: "Item Name"
+          - name: "Currency"
+          - name: "Item Price"
+          - name: "Qty Sold"
+          - name: "Sale Amount"
+          - name: "Promotion Discount"
+          - name: "Comp Amount"
+          - name: "Comp Reason"
+          - name: "Session Opening (Departure IATA)"
+          - name: "Session Closing (Departure IATA)"
+          - name: "Ticket Closing (Departure IATA)"
+          - name: "Transaction ID"
+          - name: "Voucher IDs"
+
+      - name: payments
+        description: "Payment transactions linked to sales"
+        columns:
+          - name: "Session No"
+          - name: "Synced Device SSN"
+          - name: "Order No"
+          - name: "Leg ID"
+          - name: "Ticket ID"
+          - name: "Parent Ticket ID"
+          - name: "Session Creation DateTime"
+          - name: "Ticket Closing DateTime"
+          - name: "Last Updated"
+          - name: "Server sync time"
+          - name: "Scheduled Date"
+          - name: "Flight No"
+          - name: "Flight Origin"
+          - name: "Flight Destination"
+          - name: "Host Reference Number"
+          - name: "Offline"
+          - name: "Payment Reference Number"
+          - name: "Sales Type"
+          - name: "Payment Type"
+          - name: "Currency"
+          - name: "Amount Tendered"
+          - name: "Main Currency"
+          - name: "Amount Tendered (AED)"
+          - name: "Card Digits"
+          - name: "Card Type"
+          - name: "Merchant Transaction Identifier"
+          - name: "Transaction Time"
+          - name: "Voucher ID"
+
+      - name: wastage
+        description: "Waste tracking per flight and product"
+        columns:
+          - name: "Status"
+          - name: "Closed"
+          - name: "Catering Station"
+          - name: "First Arrival Airport"
+          - name: "Inbound Catering Station"
+          - name: "Barset No"
+          - name: "Order No"
+          - name: "Scheduled Date"
+          - name: "Uplift Order(s)"
+          - name: "Flight No"
+          - name: "Scheduled Route"
+          - name: "Item Category"
+          - name: "Item Reference"
+          - name: "Item Name"
+          - name: "Item Type"
+          - name: "Ordered Qty"
+          - name: "Actual Final Loading"
+          - name: "Sold Qty"
+          - name: "Return Qty"
+          - name: "Damaged Waste Qty"
+          - name: "QTY Fresh Waste"
+          - name: "Shrinkage"
+          - name: "Consumed QTY"
+
+      - name: schedule
+        description: "Flight schedule with departure times"
+        columns:
+          - name: line_id
+          - name: flight_no
+          - name: scheduled_datetime
+          - name: iata_departure
+          - name: iata_destination
+          - name: order_no
+          - name: "Unnamed: 6"
+
+      - name: product_catalog
+        description: "Product master data (items available for sale)"
+        columns:
+          - name: "Product"
+          - name: "Reference"
+          - name: "Status"
+          - name: "Family"
+          - name: "Food"
+          - name: "Type"
+          - name: "Class of VAT"
+          - name: "Selling Price"
+
+      - name: bank
+        description: "Bank card BIN lookup table"
+        columns:
+          - name: bin
+          - name: brand
+          - name: type
+          - name: category
+          - name: issuer
+          - name: alpha_2
+          - name: alpha_3
+          - name: country
+          - name: latitude
+          - name: longitude
+          - name: bank_phone
+          - name: bank_url
