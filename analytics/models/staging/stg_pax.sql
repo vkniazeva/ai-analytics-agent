@@ -39,7 +39,7 @@ cleaned as (
       and date is not null
       and pax_quantity is not null
       and pax_quantity >= 0
-      and date between '2026-01-01' and '2026-03-31'
+      and date between '{{var("start_date")}}' and '{{var("end_date")}}'
 )
 
 select * from cleaned

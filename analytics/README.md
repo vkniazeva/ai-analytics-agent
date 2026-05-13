@@ -151,9 +151,8 @@ python -m ingestion.load_raw    # or: python ingestion/load_raw.py
 docker-compose up -d              # 1. Start PostgreSQL
 python -m ingestion.load_raw      # 2. Load raw files into DB
 cd analytics
-#TBD
-# dbt seed --profiles-dir .         # 3. Load seed lookup tables
-# dbt run --profiles-dir .          # 4. Run transformations (staging → dwh → marts)
+dbt seed --profiles-dir .         # 3. Load seed lookup tables
+dbt run --profiles-dir .          # 4. Run transformations (staging → dwh → marts)
 # dbt test --profiles-dir .         # 5. Validate data quality
 ```
 
