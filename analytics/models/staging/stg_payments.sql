@@ -34,7 +34,7 @@ transformed as (
         coalesce(cast(r.is_offline_mode as boolean), false) as is_offline_mode,
         r.sales_type,
         r.payment_type,
-        r.purchase_amount::numeric as purchase_amount,
+        r.purchase_amount::int as purchase_amount,
         substring(r.card_number_prefix from 1 for 6) as card_number_prefix,
         r.card_type
     from renamed r

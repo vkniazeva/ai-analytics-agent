@@ -28,10 +28,10 @@ renamed as (
         coalesce(r.item_category, 'UNKNOWN') as item_category,
         r.item_id as item_id,
         coalesce(r.item_type, 'UNKNOWN') as item_type,
-        r.load_quantity::numeric as load_quantity,
-        r.sold_quantity::numeric as sold_quantity,
-        r.wastage_quantity::numeric as wastage_quantity,
-        r.fresh_wastage_quantity::numeric as fresh_wastage_quantity
+        r.load_quantity::int as load_quantity,
+        r.sold_quantity::int as sold_quantity,
+        r.wastage_quantity::int as wastage_quantity,
+        r.fresh_wastage_quantity::int as fresh_wastage_quantity
     from renamed r
     left join cities as co on co.iata_code = split_part(r.route, '-', 1)
     left join cities as cd on cd.iata_code = split_part(r.route, '-', 2)
