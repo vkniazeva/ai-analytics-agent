@@ -80,44 +80,6 @@ analytics/
 | Date range filter                           | `WHERE date BETWEEN '2026-01-01' AND '2026-03-31'` |
 | Save to parquet                             | dbt materializes as table/view automatically       |
 
-## Seeds
-
-### What are seeds?
-
-Seeds are a **dbt concept** — small, static CSV files that dbt loads into the database as tables. 
-
-**Why seeds exist separately from raw data:**
-
-| Concept       | Purpose                                                 | Who loads it            |
-|---------------|---------------------------------------------------------|-------------------------|
-| Source (raw)  | Operational data from files/APIs — changes frequently   | `ingestion/load_raw.py` |
-| Model         | SQL transformation of data already in the DB            | dbt (`dbt run`)         |
-| Seed          | Small lookup/reference data that ships with the project | dbt (`dbt seed`)        |
-
-**Why use seeds instead of loading via the ingestion script?**
-
-1. **Version controlled with transformations** — the lookup CSV and the SQL that JOINs to it live together in `analytics/`
-2. **No external dependency** — `dbt seed` handles it; no separate Python step needed
-3. **Self-documenting** — anyone reading the project sees the reference data inline
-4. **Easy to update** — edit the CSV, run `dbt seed` again
-
-### Current seeds
-
-| File                        | Purpose                                          | Used by                                      |
-|-----------------------------|--------------------------------------------------|----------------------------------------------|
-| `seeds/cities_mapping.csv`  | Maps IATA airport codes to anonymized city IDs   | Staging models (origin/destination mapping)  |
-
-### Usage
-
-```bash
-dbt seed --profiles-dir .     # loads all CSVs in seeds/ as tables
-```
-
-Reference in SQL models:
-```sql
-LEFT JOIN {{ ref('cities_mapping') }} cm ON raw_table.origin = cm.iata_code
-```
-
 ## Ingestion (raw data loading)
 
 The `ingestion/` folder contains the script that loads source files (CSV/Excel) into PostgreSQL's `raw` schema. This is the "E+L" in ELT — dbt handles the "T".
@@ -144,6 +106,47 @@ python -m ingestion.load_raw    # or: python ingestion/load_raw.py
 | `raw.schedule`        | `schedule.csv`                                    |
 | `raw.product_catalog` | `product_catalog_all.xlsx`                        |
 | `raw.bank`            | `bank.csv`                                        | 
+
+
+## Staging
+
+| Concept       | Purpose                                                 | Who loads it            |
+|---------------|---------------------------------------------------------|-------------------------|
+| Source (raw)  | Operational data from files/APIs — changes frequently   | `ingestion/load_raw.py` |
+| Model         | SQL transformation of data already in the DB            | dbt (`dbt run`)         |
+| Seed          | Small lookup/reference data that ships with the project | dbt (`dbt seed`)        |
+
+Used seeds:
+
+`seeds/cities_mapping.csv` - Maps IATA airport codes to anonymized city IDs
+
+The data is taken by dbt from the raw schema tables, and then they are processed based on the 
+SQL models definition from models/staging. All models refer to the sources.yml file to their corresponding 
+tables, and then transformed by performing the following steps:
+1. Columns renaming
+2. Transforming: casting to the target data type, mapping (anonymizing) needed values, setting
+null values where applicable to the default values.
+3. Cleaning: checking the allowed values, removing null records 
+
+All staging models are created as views in PostreSQL under the public schema.
+
+### Testing
+
+1. Schema consistency
+   - naming
+   - types
+   - casts
+2. Null handling
+3. Grain validation
+4. Basic domain validation
+   - accepted_values
+   - amount >= 0
+   - dates valid
+5. Referential sanity (relationships)
+
+Not all fields are covered with the tests, but only the business critical ones.
+
+
 
 ## Full workflow
 

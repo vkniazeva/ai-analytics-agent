@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_bank
+    columns:
+      - name: card_number_prefix
+        description: "First 6 digits of the card (BIN), identifies issuing bank"
+        tests:
+          - not_null
+          - unique
+      - name: brand
+        description: "Payment card type like Visa or Mastercard"
+        tests:
+          - not_null
+      - name: country_short
+        description: "Issuing bank country (short code)"
+        tests:
+          - not_null
+
+  - name: stg_catalog
+    columns:
+      - name: item_id
+        description: "Unique id of a product catalog position"
+        tests:
+          - not_null
+          - unique
+      - name: item_category
+        description: "Item category name usually containing classification for the buy on board products and a specific
+         type for preordered items"
+        tests:
+          - not_null
+      - name: price
+        description: "Item price (as decimal)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+

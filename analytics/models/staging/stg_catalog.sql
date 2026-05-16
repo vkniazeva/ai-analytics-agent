@@ -27,6 +27,6 @@ renamed as (
         where item_id is not null
         and item_category is not null
         and price is not null
-        and price >= 0
+        and price > 0
     )
 select * from cleaned
