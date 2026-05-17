@@ -162,3 +162,10 @@ dbt run --profiles-dir .          # 4. Run transformations (staging → dwh → 
 ## Legacy Python code
 
 The original Python ETL files (`etl/staging.py`, `etl/dwh.py`, `etl/presentation.py`) are kept in the repo for reference during migration. They will be moved to `etl_legacy/` once dbt models are validated.
+
+## Useful links
+Modelling with dbt:
+- [Building a Kimball dimensional model with dbt](https://docs.getdbt.com/blog/kimball-dimensional-model?version=1.13)
+- [Data Vault 2.0 with dbt Cloud](https://docs.getdbt.com/blog/data-vault-with-dbt-cloud?version=1.13)
+- [Medallion Architecture with dbt](https://tsaiprabhanj.medium.com/medallion-architecture-with-dbt-a40050743be3)
+- [Database Normalization vs. Denormalization](https://medium.com/analytics-vidhya/database-normalization-vs-denormalization-a42d211dd891)

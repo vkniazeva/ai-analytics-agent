@@ -1,0 +1,11 @@
+currency_code,currency_id
+USD,cur_001
+EUR,cur_002
+GBP,cur_003
+JPY,cur_004
+CHF,cur_005
+CAD,cur_006
+AUD,cur_007
+CNY,cur_008
+SEK,cur_009
+NZD,cur_010

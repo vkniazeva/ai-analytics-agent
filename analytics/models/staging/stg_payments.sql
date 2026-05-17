@@ -4,21 +4,27 @@ with source as (
 cities as (
     select * from {{ref('cities_mapping')}}
 ),
+currencies as (
+    select * from {{ref('currency_mapping')}}
+)  ,
 renamed as (
     select
-        "Session No"            as session_id,
-        "Order No"              as load_id,
-        "Ticket ID"             as slip_id,
-        "Flight No"             as flight_no,
-        "Flight Origin"         as origin_raw,
-        "Flight Destination"    as destination_raw,
-        "Scheduled Date"        as scheduled_date_raw,
-        "Offline"               as is_offline_mode,
-        "Sales Type"            as sales_type,
-        "Payment Type"          as payment_type,
-        "Amount Tendered"       as purchase_amount,
-        "Card Digits"           as card_number_prefix,
-        "Card Type"             as card_type
+        "Session No"                as session_id,
+        "Order No"                  as load_id,
+        "Ticket ID"                 as slip_id,
+        "Flight No"                 as flight_no,
+        "Flight Origin"             as origin_raw,
+        "Flight Destination"        as destination_raw,
+        "Scheduled Date"            as scheduled_date_raw,
+        "Offline"                   as is_offline_mode,
+        "Sales Type"                as sales_type,
+        "Payment Type"              as payment_type,
+        "Amount Tendered"           as purchase_amount,
+        "Currency"                  as currency,
+        "Amount Tendered (main)"    as purchase_amount_main,
+        "Main Currency"             as main_currency,
+        "Card Digits"               as card_number_prefix,
+        "Card Type"                 as card_type
     from source
 ),
 transformed as (
@@ -34,12 +40,17 @@ transformed as (
         coalesce(cast(r.is_offline_mode as boolean), false) as is_offline_mode,
         r.sales_type,
         r.payment_type,
-        r.purchase_amount::int as purchase_amount,
+        r.purchase_amount::decimal as purchase_amount,
+        coalesce(cur.currency_id, 'UNKNOWN') as currency,
+        r.purchase_amount_main::decimal as purchase_amount_main,
+        coalesce(cur.currency_id, 'UNKNOWN') as main_currency,
         substring(r.card_number_prefix from 1 for 6) as card_number_prefix,
         r.card_type
     from renamed r
     left join cities co on r.origin_raw = co.iata_code
     left join cities cd on r.destination_raw = cd.iata_code
+    left join currencies cur on r.currency = cur.currency_code
+    left join currencies main_cur on r.main_currency = main_cur.currency_code
 ),
 cleaned as (
         select distinct *
@@ -51,6 +62,7 @@ cleaned as (
             and sales_type is not null
             and payment_type is not null
             and purchase_amount is not null
+            and purchase_amount_main is not null
             and date between '{{var("start_date")}}' and '{{var("end_date")}}'
     )
 select * from cleaned

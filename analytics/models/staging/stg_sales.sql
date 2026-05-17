@@ -4,6 +4,9 @@ with source as (
 cities as (
     select * from {{ ref('cities_mapping') }}
 ),
+currencies as (
+    select * from {{ ref('currency_mapping') }}
+),
 renamed as (
     select
         "Session No" as session_id,
@@ -16,6 +19,7 @@ renamed as (
         "Sales Type" as sales_type,
         "Item Category" as item_category,
         "Item Reference" as item_id,
+        "Currency" as currency,
         "Item Price" as price,
         "Qty Sold" as sold_quantity,
         "Sale Amount" as purchase_amount,
@@ -32,6 +36,7 @@ renamed as (
         split_part(r.scheduled_date, 'T', 2)::time as time,
         r.slip_id as slip_id,
         r.sales_type as sales_type,
+        coalesce(cur.currency_id, 'UNKNOWN') as currency,
         r.item_id as item_id,
         coalesce(r.item_category, 'UNKNOWN') as item_category,
         coalesce(r.price, 0)::decimal as price,
@@ -41,6 +46,7 @@ renamed as (
     from renamed r
     left join cities as co on co.iata_code = r.origin
     left join cities as cd on cd.iata_code = r.destination
+    left join currencies cur on r.currency = cur.currency_code
 ), cleaned as (
     select distinct *
     from transformed

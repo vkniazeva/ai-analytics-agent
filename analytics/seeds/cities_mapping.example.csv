@@ -1,0 +1,11 @@
+iata_code,city_id
+JFK,city_001
+LAX,city_002
+CDG,city_003
+NRT,city_004
+SYD,city_005
+GRU,city_006
+DXB,city_007
+SIN,city_008
+HKG,city_009
+FRA,city_010

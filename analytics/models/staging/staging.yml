@@ -36,3 +36,42 @@ models:
           - dbt_utils.expression_is_true:
               expression: "> 0"
 
+
+
+  - name: stg_pax
+#    tests:
+#      - dbt_utils.unique_combination_of_columns:
+#          combination_of_columns:
+#            - flight_no
+#            - date
+#            - time
+#            - class
+    columns:
+      - name: flight_no
+        description: "Flight number (masked by removing the first 2 letters and replacing by AB. 
+        Grain: flight number for a given date for a given time"
+        tests:
+          - not_null
+      - name: origin
+        description: "Departure airport IATA code mapped with anonymized city (cities_mapping in seed)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "like 'city%'"
+      - name: destination
+        description: "Arrival airport IATA code mapped with anonymized city (cities_mapping in seed)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "like 'city%'"
+      - name: pax_quantity
+        description: "Number of passenger per unique flight instance (see grain) per class"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">=0 and pax_quantity <200"
+
+#
+
+
+

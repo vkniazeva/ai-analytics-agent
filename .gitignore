@@ -15,6 +15,8 @@ data/dwh/*
 data/marts/*
 !data/marts/samples/
 data/config/cities_mapping.json
+analytics/seeds/cities_mapping.csv
+analytics/seeds/currency_mapping.csv
 
 # OS
 .DS_Store
