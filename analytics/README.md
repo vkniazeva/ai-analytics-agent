@@ -146,6 +146,13 @@ All staging models are created as views in PostreSQL under the public schema.
 
 Not all fields are covered with the tests, but only the business critical ones.
 
+#### Staging 
+
+On the staging step the following tests are implemented:
+- not null values
+- allowed values for the specific enum columns
+- grain tests are removed from this level!
+- custom sql tests are added
 
 
 ## Full workflow
