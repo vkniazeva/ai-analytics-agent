@@ -7,6 +7,7 @@ cities as (
 currencies as (
     select * from {{ ref('currency_mapping') }}
 ),
+{#  using aggregation to sum up by ticket_id & sales_type & item_reference  #}
 renamed as (
     select
         "Session No" as session_id,
@@ -59,7 +60,6 @@ renamed as (
     and item_id is not null
     and sold_quantity is not null
     and purchase_amount is not null
-    and sold_quantity >= 0
     and price >= 0
     and discount_amount >= 0
     and date between '{{var("start_date")}}' and '{{var("end_date")}}'

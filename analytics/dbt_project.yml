@@ -33,8 +33,8 @@ models:
   analytics:
     staging:
       +materialized: view
-    example:
-      +materialized: view
+    intermediate:
+      +materialized: table
 
 
 vars:

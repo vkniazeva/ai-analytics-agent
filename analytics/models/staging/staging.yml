@@ -2,6 +2,7 @@ version: 2
 
 models:
   - name: stg_bank
+    description: "View with the enriched card details. Grain: unique BIN code"
     columns:
       - name: card_number_prefix
         description: "First 6 digits of the card (BIN), identifies issuing bank"
@@ -18,6 +19,7 @@ models:
           - not_null
 
   - name: stg_catalog
+    description: "View with the product catalog data. Grain: item level"
     columns:
       - name: item_id
         description: "Unique id of a product catalog position"
@@ -36,16 +38,8 @@ models:
           - dbt_utils.expression_is_true:
               expression: "> 0"
 
-
-
   - name: stg_pax
-#    tests:
-#      - dbt_utils.unique_combination_of_columns:
-#          combination_of_columns:
-#            - flight_no
-#            - date
-#            - time
-#            - class
+    description: "View with the passenger counts info"
     columns:
       - name: flight_no
         description: "Flight number (masked by removing the first 2 letters and replacing by AB. 
@@ -71,7 +65,160 @@ models:
           - dbt_utils.expression_is_true:
               expression: ">=0 and pax_quantity <200"
 
-#
+  - name: stg_sales
+    description: "View with the sales in a context of flight instance, individual item within a slip"
+    columns:
+      - name: session_id
+        description: "Unique identifier of a sales session"
+        tests:
+          - not_null
+      - name: load_id
+        description: "Order to be delivered to an aircraft (set of trolleys)"
+        tests:
+          - not_null
+      - name: flight_no
+        description: "Flight number order and purchase is associated with"
+        tests:
+          - not_null
+      - name: date
+        description: "Flight date. Will be treated as a sale date"
+        tests:
+          - not_null
+      - name: time
+        description: "Flight time. Will be treated as a sale time (seconds will be removed)"
+        tests:
+          - not_null
+      - name: slip_id
+        description: "Slip identifier. Can be repeated multiple times in context of an item or a sale type"
+        tests:
+          - not_null
+      - name: sales_type
+        description: "String value defining what if transaction represented a sale or a refund"
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Sale
+                - Refund
+      - name: item_id
+        description: "Unique product id."
+        tests:
+          - not_null
+      - name: sold_quantity
+        description: "Number of sold items within a slip. Normally should be above 0"
+        tests:
+          - not_null
+      - name: purchase_amount
+        description: "Total sale amount per transaction, product and sale type. When type is Sale should be above 0"
+        tests:
+          - not_null
+
+  - name: stg_payments
+    description: "Payment transactions reflecting all types of transactions performed during the flight"
+    columns:
+      - name: session_id
+        description: "Unique identifier of a sales session"
+        tests:
+          - not_null
+      - name: load_id
+        description: "Order to be delivered to an aircraft (set of trolleys)"
+        tests:
+          - not_null
+      - name: slip_id
+        description: "Slip identifier. Can be repeated multiple times in context of an item or a sale type"
+        tests:
+          - not_null
+      - name: flight_no
+        description: "Flight number order and purchase is associated with"
+        tests:
+          - not_null
+      - name: sales_type
+        description: "String value defining what if transaction represented a sale or a refund"
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Sale
+                - Refund
+                - Change Given
+      - name: payment_type
+        description: "String value defining what if how specific transaction was paid"
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Card
+                - Cash
+                - RAK Voucher
+      - name: purchase_amount
+        description: "Total sale amount per transaction, product and sale type. When type is Sale should be above 0"
+        tests:
+          - not_null
+  - name: stg_wastage
+    description: "Loads and returns info about the products dispatched to the aircraft"
+    columns:
+      - name: load_id
+        description: "Order to be delivered to an aircraft (set of trolleys)"
+        tests:
+          - not_null
+      - name: flight_no
+        description: "Flight number order and purchase is associated with"
+        tests:
+          - not_null
+      - name: date
+        description: "Flight date: scheduled one, not a real"
+        tests:
+          - not_null
+      - name: item_id
+        description: "Unique product id."
+        tests:
+          - not_null
+      - name: load_quantity
+        description: "Loading quantities - number of items loaded to a trolley"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: sold_quantity
+        description: "Number of wasted items after the flight"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: wastage_quantity
+        description: "Number of wasted items after the flight"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: fresh_wastage_quantity
+        description: "Number of fresh wasted items after the flight"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: stg_schedule
+    description: "Schedule data with all flights. TBD: to add a flight status"
+    columns:
+      - name: "line_id"
+        description: "Unique identifier of the connected flights catered together"
+        tests:
+          - not_null
+      - name: flight_no
+        description: "Flight number order and purchase is associated with"
+        tests:
+          - not_null
+      - name: date
+        description: "Flight date: scheduled one, not a real"
+        tests:
+          - not_null
+
+
+
+
+
+
 
 
 
