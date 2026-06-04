@@ -28,7 +28,7 @@ renamed as (
     from source
 ), transformed as (
     select
-        substring(r.session_id from 7) as session_id,
+        substring(r.session_id from 8) as session_id,
         r.load_id as load_id,
         'AB'||substring(r.flight_no from 3) as flight_no,
         coalesce(co.city_id, 'UNKNOWN') as origin,
