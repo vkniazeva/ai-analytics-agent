@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: int_flights
+    description: "Unified flight information from multiple sources. Grain: one row per flight_no + origin + destination + date"
+    columns:
+      - name: flight_no
+        description: Flight number
+        tests:
+          - not_null
+      - name: origin
+        description: Origin airport
+        tests:
+          - not_null
+      - name: destination
+        description: Destination airport
+        tests:
+          - not_null
+      - name: date
+        description: Flight date
+        tests:
+          - not_null
+      - name: time
+        description: Flight time (nullable for wastage source)
+      - name: load_id
+        description: Load identifier (nullable for pax source)
+      - name: source
+        description: Data source identifier
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['SCHEDULE', 'WASTAGE', 'SALES', 'PAYMENTS', 'PAX']
+      - name: rn
+        description: Row number for deduplication
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_no
+            - origin
+            - destination
+            - date
+
+  - name: int_hours
+    description: "Reference table for hours 0-23. Grain: one row per hour"
+    columns:
+      - name: hour
+        description: Hour of day (0-23)
+        tests:
+          - not_null
+          - unique

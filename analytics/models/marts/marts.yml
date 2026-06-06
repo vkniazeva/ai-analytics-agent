@@ -1,0 +1,276 @@
+version: 2
+
+models:
+  - name: dim_time
+    description: "Time dimension. Grain: one row per time_key (hour of day)"
+    columns:
+      - name: time_key
+        description: Primary key - hour of day
+        tests:
+          - not_null
+          - unique
+      - name: hour
+        description: Hour of day (0-23)
+        tests:
+          - not_null
+      - name: is_night
+        description: Boolean indicating night time (22:00-04:59)
+        tests:
+          - not_null
+      - name: day_period
+        description: Period of day (Night, Morning, Day, Evening)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Night', 'Morning', 'Day', 'Evening']
+      - name: am_pm
+        description: AM/PM indicator
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['AM', 'PM']
+
+  - name: dim_date
+    description: "Date dimension. Grain: one row per date_key (calendar date)"
+    columns:
+      - name: date_key
+        description: Primary key - date in YYYYMMDD format
+        tests:
+          - not_null
+          - unique
+      - name: date
+        description: Calendar date
+        tests:
+          - not_null
+      - name: year
+        description: Year
+        tests:
+          - not_null
+      - name: month
+        description: Month number
+        tests:
+          - not_null
+      - name: day
+        description: Day of month
+        tests:
+          - not_null
+      - name: quarter
+        description: Quarter (1-4)
+        tests:
+          - not_null
+      - name: week_day
+        description: Day of week
+        tests:
+          - not_null
+      - name: is_weekend
+        description: Boolean indicating weekend
+        tests:
+          - not_null
+
+  - name: dim_card
+    description: "Card payment dimension. Grain: one row per card_number_prefix (pr)"
+    columns:
+      - name: card_number_prefix
+        description: Card number prefix - primary key
+        tests:
+          - not_null
+          - unique
+      - name: source_card_type
+        description: Card type from source system
+      - name: card_brand
+        description: Card brand (Visa, Mastercard, etc.)
+      - name: reference_card_type
+        description: Card type from reference data
+      - name: card_category
+        description: Card category
+      - name: card_issuer
+        description: Card issuing institution
+      - name: issuer_country
+        description: Issuer country code
+
+  - name: dim_sessions
+    description: "Sales session dimension. Grain: one row per session_id"
+    columns:
+      - name: session_id
+        description: Session identifier - primary key
+        tests:
+          - not_null
+          - unique
+      - name: is_offline_mode
+        description: Boolean indicating offline mode operation
+
+  - name: dim_flights
+    description: "Flight dimension. Grain: one row per flight_number + date + hour_of_departure"
+    columns:
+      - name: flight_key
+        description: Primary key - surrogate key combining flight, date, and hour
+        tests:
+          - not_null
+          - unique
+      - name: flight_key_with_date
+        description: Alternate key - surrogate key combining flight and date
+        tests:
+          - not_null
+      - name: flight_number
+        description: Flight number
+        tests:
+          - not_null
+      - name: origin
+        description: Origin airport
+        tests:
+          - not_null
+      - name: destination
+        description: Destination airport
+        tests:
+          - not_null
+      - name: date
+        description: Flight date key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: hour_of_departure
+        description: Hour of departure
+        tests:
+          - relationships:
+              to: ref('dim_time')
+              field: time_key
+      - name: time
+        description: Departure time
+
+  - name: dim_products
+    description: "Product dimension. Grain: one row per product_key (item_id)"
+    columns:
+      - name: product_key
+        description: Primary key - surrogate key from item_id
+        tests:
+          - not_null
+          - unique
+      - name: item_id
+        description: Item identifier
+        tests:
+          - not_null
+      - name: status
+        description: Product status
+      - name: category
+        description: Product category
+      - name: is_food
+        description: Boolean indicating food item
+      - name: item_type
+        description: Product type
+      - name: price
+        description: Product price
+
+  - name: fact_sales
+    description: "Sales transactions fact table. Grain: one row per flight_number + date + product_key + sales_type (session_id and load_id are 1:1 with flight)"
+    columns:
+      - name: sale_transaction_key
+        description: Primary key - unique sale transaction identifier
+        tests:
+          - not_null
+          - unique
+      - name: flight_key
+        description: Foreign key to dim_flights
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key
+      - name: sales_session_id
+        description: Foreign key to dim_sessions
+        tests:
+          - relationships:
+              to: ref('dim_sessions')
+              field: session_id
+      - name: load_id
+        description: Load identifier
+      - name: sales_type
+        description: Type of sale
+      - name: currency
+        description: Transaction currency
+      - name: product_key
+        description: Foreign key to dim_products
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_key
+      - name: sold_quantity
+        description: Quantity sold
+      - name: purchase_amount
+        description: Purchase amount
+      - name: discount_amount
+        description: Discount amount
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_key
+            - product_key
+            - sales_type
+            - sales_session_id
+
+  - name: fact_wastage
+    description: "Product wastage fact table. Grain: one row per flight_number + date + product_key (load_id is 1:1 with flight)"
+    columns:
+      - name: wastage_record_key
+        description: Primary key - unique wastage record identifier
+        tests:
+          - not_null
+          - unique
+      - name: load_id
+        description: Load identifier
+      - name: flight_key_with_date
+        description: Foreign key to dim_flights (date-level grain)
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key_with_date
+      - name: product_key
+        description: Foreign key to dim_products
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_key
+      - name: load_quantity
+        description: Loaded quantity
+      - name: sold_quantity
+        description: Sold quantity
+      - name: wastage_quantity
+        description: Wasted quantity
+      - name: fresh_wastage_quantity
+        description: Fresh items wasted
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_key_with_date
+            - product_key
+            - load_id
+  - name: fact_pax
+    description: "Passenger count fact table. Grain: one row per flight_number + date + hour_of_departure + travel_class"
+    columns:
+      - name: passenger_count_key
+        description: Primary key - unique passenger count identifier
+        tests:
+          - not_null
+          - unique
+      - name: flight_key
+        description: Foreign key to dim_flights
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key
+      - name: travel_class
+        description: Travel class
+        tests:
+          - not_null
+      - name: number_of_passengers
+        description: Number of passengers
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_key
+            - travel_class

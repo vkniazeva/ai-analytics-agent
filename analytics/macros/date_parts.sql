@@ -104,7 +104,7 @@
 
     case
         when extract(minute from {{ time_column }}) >= 30
-            then extract(hour from {{ time_column }}) + 1
+            then least(extract(hour from {{ time_column }}) + 1, 23)
         else extract(hour from {{ time_column }})
     end
 
@@ -114,7 +114,7 @@
 
     case
         when date_part(minute, {{ time_column }}) >= 30
-            then date_part(hour, {{ time_column }}) + 1
+            then least(date_part(hour, {{ time_column }}) + 1, 23)
         else date_part(hour, {{ time_column }})
     end
 

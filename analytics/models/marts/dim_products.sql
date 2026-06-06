@@ -1,7 +1,6 @@
 select
     {{dbt_utils.generate_surrogate_key( [
-        'item_id',
-        'price'
+        'item_id'
     ] ) }} as product_key,
     item_id as item_id,
     status as status,

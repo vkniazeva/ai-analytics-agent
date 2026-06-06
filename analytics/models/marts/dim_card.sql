@@ -1,6 +1,5 @@
-select
-    p.card_number_prefix as pr,
-       p.card_type as source_card_type,
+select distinct
+    p.card_number_prefix as card_number_prefix,
        b.brand as card_brand,
        b.type as reference_card_type,
        b.category as card_category,

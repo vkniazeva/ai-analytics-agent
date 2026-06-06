@@ -11,6 +11,8 @@ from {{ ref('int_flights')}}
 select
     {{dbt_utils.generate_surrogate_key([
     'flight_number', 'date', 'hour_of_departure']) }} as flight_key,
+     {{dbt_utils.generate_surrogate_key([
+    'flight_number', 'date']) }} as flight_key_with_date,
     flight_number as flight_number,
     origin as origin,
     destination as destination,
