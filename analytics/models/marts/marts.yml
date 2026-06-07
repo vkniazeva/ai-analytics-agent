@@ -274,3 +274,91 @@ models:
           combination_of_columns:
             - flight_key
             - travel_class
+
+  - name: fact_items_load
+    description: "Items loading fact table. Grain: one row per flight_key + load_id + item_id (product loaded onto aircraft within an order/trolley set)"
+    columns:
+      - name: item_load_key
+        description: Primary key - unique item load identifier
+        tests:
+          - not_null
+          - unique
+      - name: flight_key
+        description: Foreign key to dim_flights
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key
+      - name: load_id
+        description: Load identifier (order number for trolley set)
+        tests:
+          - not_null
+      - name: product_key
+        description: Foreign key to dim_products
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_key
+      - name: total_loaded_quantity
+        description: Total quantity of items loaded
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_key
+            - load_id
+            - product_key
+
+  - name: fact_payments
+    description: "Payment transactions fact table. Grain: one row per slip_id + flight_key + sales_type + payment_type"
+    columns:
+      - name: payment_transaction_key
+        description: Primary key - unique payment transaction identifier
+        tests:
+          - not_null
+          - unique
+      - name: flight_key
+        description: Foreign key to dim_flights
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key
+      - name: session_id
+        description: Foreign key to dim_sessions
+        tests:
+          - relationships:
+              to: ref('dim_sessions')
+              field: session_id
+      - name: load_id
+        description: Load identifier
+      - name: slip_id
+        description: Slip/ticket/receipt identifier
+        tests:
+          - not_null
+      - name: sales_type
+        description: Type of sale
+        tests:
+          - not_null
+      - name: payment_type
+        description: Type of payment method
+        tests:
+          - not_null
+      - name: main_currency
+        description: Main currency for the transaction
+      - name: card_number_prefix
+        description: Foreign key to dim_card (card BIN)
+        tests:
+          - relationships:
+              to: ref('dim_card')
+              field: card_number_prefix
+      - name: purchase_amount_main
+        description: Purchase amount in main currency
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - slip_id
+            - flight_key
+            - sales_type
+            - payment_type
