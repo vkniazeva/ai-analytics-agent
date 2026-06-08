@@ -31,6 +31,7 @@ cleaned as (
         and item_id is not null
         and total_loaded_quantity is not null
         and total_loaded_quantity >= 0
+        and date between '{{var("start_date")}}' and '{{var("end_date")}}'
 )
 select * from cleaned
 

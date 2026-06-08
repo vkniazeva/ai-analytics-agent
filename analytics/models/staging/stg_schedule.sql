@@ -19,7 +19,7 @@ transformed as (
         'AB'||substring(r.flight_no from 3) as flight_no,
         coalesce(co.city_id, 'UNKNOWN') as origin,
         coalesce(cd.city_id, 'UNKNOWN') as destination,
-        to_date(split_part(r.scheduled_date, ' ', 1), 'DD/MM/YY') as date,
+        to_date(split_part(r.scheduled_date, ' ', 1), 'YYYY-MM-DD') as date,
         split_part(r.scheduled_date, ' ', 2)::time as time,
         r.load_id as load_id
     from renamed r

@@ -8,7 +8,6 @@ with tmp as (
         slip_id as slip_id,
         sales_type as sales_type,
         payment_type as payment_type,
-        main_currency as main_currency,
         card_number_prefix as card_number_prefix,
         purchase_amount_main as purchase_amount_main
     from {{ ref('stg_payments') }}
@@ -24,7 +23,6 @@ replaced as (
         slip_id as slip_id,
         sales_type as sales_type,
         payment_type as payment_type,
-        main_currency as main_currency,
         card_number_prefix as card_number_prefix,
         purchase_amount_main as purchase_amount_main
     from tmp
@@ -37,8 +35,7 @@ select
     slip_id as slip_id,
     sales_type as sales_type,
     payment_type as payment_type,
-    main_currency as main_currency,
     card_number_prefix as card_number_prefix,
     sum(purchase_amount_main) as purchase_amount_main
 from replaced
-group by payment_transaction_key, flight_key, session_id, load_id, slip_id, sales_type, payment_type, main_currency, card_number_prefix
+group by payment_transaction_key, flight_key, session_id, load_id, slip_id, sales_type, payment_type, card_number_prefix

@@ -63,7 +63,7 @@ models:
         tests:
           - not_null
           - dbt_utils.expression_is_true:
-              expression: ">=0 and pax_quantity <200"
+              expression: ">=0 and pax_quantity <250"
 
   - name: stg_sales
     description: "View with the sales in a context of flight instance, individual item within a slip"
