@@ -1,12 +1,15 @@
 with initial as (
     select
-        flight_no as flight_number,
-        {{ date_to_key('date') }} as date,
-        {{ round_hour_from_time('time') }} as hour_of_departure,
-        load_id as load_id,
-        item_id as item_id,
-        total_loaded_quantity as total_loaded_quantity
-    from {{ ref('stg_items_load')}}
+        il.flight_no as flight_number,
+        {{ date_to_key('il.date') }} as date,
+        {{ round_hour_from_time('f.time') }} as hour_of_departure,
+        il.load_id as load_id,
+        il.item_id as item_id,
+        il.total_loaded_quantity as total_loaded_quantity
+    from {{ ref('stg_items_load')}} il
+    inner join {{ ref('int_flights')}} f
+        on il.flight_no = f.flight_no
+        and il.date = f.date
 ),
 replaced as (
     select

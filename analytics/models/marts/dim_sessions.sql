@@ -28,7 +28,7 @@ ranked as (
     from unioned)
 
 select
-        session_id,
+        session_id as sales_session_id,
        is_offline_mode
 from ranked
 where rn=1

@@ -1,11 +1,14 @@
 with flights as (
     select
-        flight_no as flight_number,
-        {{ date_to_key('date') }} as date,
-        {{ round_hour_from_time('time') }} as hour_of_departure,
-        class as travel_class,
-        pax_quantity as number_of_passengers
-from {{ ref('stg_pax') }}
+        p.flight_no as flight_number,
+        {{ date_to_key('p.date') }} as date,
+        {{ round_hour_from_time('f.time') }} as hour_of_departure,
+        p.class as travel_class,
+        p.pax_quantity as number_of_passengers
+    from {{ ref('stg_pax') }} p
+    inner join {{ ref('int_flights')}} f
+        on p.flight_no = f.flight_no
+        and p.date = f.date
 ),
 replaced as
 ( select

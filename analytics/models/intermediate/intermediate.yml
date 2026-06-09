@@ -29,7 +29,7 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['SCHEDULE', 'WASTAGE', 'SALES', 'PAYMENTS', 'PAX']
+              values: ['SCHEDULE', 'WASTAGE', 'SALES', 'PAYMENTS', 'PAX', 'ITEMS_LOAD']
       - name: rn
         description: Row number for deduplication
         tests:

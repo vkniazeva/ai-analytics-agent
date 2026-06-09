@@ -154,6 +154,8 @@ models:
         description: "Total sale amount per transaction, product and sale type. When type is Sale should be above 0"
         tests:
           - not_null
+
+
   - name: stg_wastage
     description: "Loads and returns info about the products dispatched to the aircraft"
     columns:
