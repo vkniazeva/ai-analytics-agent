@@ -302,6 +302,8 @@ models:
               field: product_key
       - name: total_loaded_quantity
         description: Total quantity of items loaded
+      - name: potential_error
+        description: Data quality flag with error labels (e.g., 'zero_load_error' when loaded quantity is 0, which should not normally occur)
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -359,3 +361,83 @@ models:
             - sales_type
             - payment_type
             - card_number_prefix
+
+  - name: mart_fresh_food_order_sale
+    description: "Fresh food loading and sales mart combining item-level load quantities with actual sales, enriched with flight, temporal, and product attributes. Serves as the foundation for demand forecasting models."
+    columns:
+      - name: flight_key
+        description: Foreign key to dim_flights - unique flight identifier
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_flights')
+              field: flight_key
+      - name: flight_number
+        description: Flight number
+        tests:
+          - not_null
+      - name: hour_of_departure
+        description: Hour of departure
+        tests:
+          - relationships:
+              to: ref('dim_time')
+              field: time_key
+      - name: is_night
+        description: Boolean indicating night time departure
+      - name: day_period
+        description: Period of day (Night, Morning, Day, Evening)
+      - name: am_pm
+        description: AM/PM indicator
+      - name: origin
+        description: Origin airport
+        tests:
+          - not_null
+      - name: destination
+        description: Destination airport
+        tests:
+          - not_null
+      - name: date
+        description: Flight date key
+        tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: is_weekend
+        description: Boolean indicating weekend
+      - name: week_day
+        description: Day of week
+      - name: load_id
+        description: Load identifier (order number for trolley set)
+        tests:
+          - not_null
+      - name: slip_id
+        description: Sales slip/receipt identifier (transaction level)
+        tests:
+          - not_null
+      - name: item_id
+        description: Item identifier
+        tests:
+          - not_null
+      - name: item_category
+        description: Product category
+      - name: item_price
+        description: Product price
+      - name: loaded_quantity
+        description: Total quantity of items loaded onto the flight for this product (excludes zero quantities)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: sold_quantity
+        description: Quantity of items sold during the flight
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_key
+            - load_id
+            - slip_id
+            - item_id

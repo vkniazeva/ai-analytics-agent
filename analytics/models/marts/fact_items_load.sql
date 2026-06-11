@@ -20,7 +20,11 @@ replaced as (
     load_id as load_id,
     {{dbt_utils.generate_surrogate_key([
         'item_id']) }} as product_key,
-    sum(total_loaded_quantity) as total_loaded_quantity
+    sum(total_loaded_quantity) as total_loaded_quantity,
+    case
+        when sum(total_loaded_quantity) = 0 then 'zero_load_error'
+        else null
+    end as potential_error
     from initial
     group by flight_key, item_load_key, load_id, product_key
 )

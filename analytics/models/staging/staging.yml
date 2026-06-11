@@ -216,6 +216,38 @@ models:
         tests:
           - not_null
 
+  - name: stg_items_load
+    description: "Individual product loading information per flight, containing assigned loads (sets of trolleys) and product quantities loaded on them. Essential for inventory and demand forecasting."
+    columns:
+      - name: flight_no
+        description: "Flight number (masked, starts with AB)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "like 'AB%'"
+      - name: date
+        description: "Flight departure date"
+        tests:
+          - not_null
+      - name: time
+        description: "Flight departure time"
+        tests:
+          - not_null
+      - name: load_id
+        description: "Loading ID for an aircraft (set of trolleys)"
+        tests:
+          - not_null
+      - name: item_id
+        description: "Individual product identifier"
+        tests:
+          - not_null
+      - name: total_loaded_quantity
+        description: "Total quantity of items loaded onto the aircraft"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
 
 
 
