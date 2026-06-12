@@ -34,9 +34,10 @@ This project simulates an airline retail analytics environment and demonstrates 
 ## Features
 
 * Layered data architecture (raw → processed → DWH → marts)
-* ETL pipeline for structured data preparation
+* dbt-powered transformations (replaced legacy Pandas ETL)
 * Star schema data warehouse
 * PostgreSQL serving layer
+* Metadata sync (dbt models & lineage → PostgreSQL)
 * Superset BI dashboards
 * (Planned) Analytics API
 * (Planned) LLM-powered analytics agent
@@ -208,6 +209,25 @@ flowchart LR
 
 ---
 
+## Metadata Layer
+
+The system automatically extracts metadata from dbt's `manifest.json` and stores it in PostgreSQL for:
+
+* **Model catalog**: all dbt models with attributes (layer, materialization, description, tags)
+* **Lineage tracking**: model dependencies for impact analysis
+
+**Schema**: `metadata`
+**Tables**:
+* `metadata.models` - dbt model registry
+* `metadata.dependencies` - model-to-model dependencies
+
+This enables programmatic access to the data model structure, supporting future features like:
+* Auto-generated documentation
+* Impact analysis queries
+* AI agent context for data exploration
+
+---
+
 ## Key Design Decisions
 
 * Star schema for analytical clarity
@@ -231,11 +251,17 @@ flowchart LR
 ### Installation & Run
 
 ```bash
-# Start database
-docker compose up -d postgres
+# Install dependencies
+make install
 
-# Run full pipeline
-python app.py --etl
+# Run full pipeline (start db, load raw data, run dbt, sync metadata)
+make run
+
+# Or run steps individually:
+make start          # Start PostgreSQL
+make load           # Load raw data
+make dbt            # Run dbt (deps + seed + run + test)
+make metadata-sync  # Sync dbt metadata to PostgreSQL
 
 # Start Superset
 docker compose up -d superset
@@ -259,20 +285,21 @@ admin / admin
 
 ### Completed
 
-* ETL pipeline
-* Data staging layer
+* Migration from Pandas ETL → dbt transformations
 * Data warehouse (star schema)
-* PostgreSQL loading (COPY)
+* Data marts (dbt models)
+* PostgreSQL loading
 * PK/FK constraints and indexes
-* Data marts
 * Superset dashboards
+* Metadata sync: dbt models & lineage → PostgreSQL `metadata` schema
+  * `metadata.models` - all dbt models with layer, materialization, tags
+  * `metadata.dependencies` - model lineage graph
 
 ---
 
 ### In Progress
 
 * Data model stabilization
-* Migration from Pandas → SQL transformations
 
 ---
 

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from etl.staging import BASE_DIR
+from etl_legacy.staging import BASE_DIR
 
 DWH_PATH = BASE_DIR / "data/dwh"
 MARTS_PATH = BASE_DIR / "data/marts"

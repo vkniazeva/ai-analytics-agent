@@ -1,11 +1,11 @@
 import argparse
 
-from etl import staging, dwh, presentation, db
+from etl_legacy import staging, dwh, presentation, db
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--etl", action="store_true", help="Run staging and DWH pipelines before loading to DB")
+    parser.add_argument("--etl_legacy", action="store_true", help="Run staging and DWH pipelines before loading to DB")
     args = parser.parse_args()
 
     if args.etl:

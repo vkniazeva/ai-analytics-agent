@@ -16,7 +16,11 @@ select
     dp.category as item_category,
     dp.price as item_price,
     il.total_loaded_quantity as loaded_quantity,
-    fs.sold_quantity as sold_quantity
+    fs.sold_quantity as sold_quantity,
+    case
+        when il.total_loaded_quantity = 0 and fs.sold_quantity > 0 then 'zero_load_positive_sale'
+        else null
+    end as potential_error
 from {{ ref('fact_items_load') }} il
 left join {{ ref('dim_flights') }} df on il.flight_key = df.flight_key
 left join {{ ref('dim_products') }} dp on il.product_key = dp.product_key
@@ -26,4 +30,3 @@ left join {{ ref('dim_time') }} dt on df.hour_of_departure = dt.time_key
 where dp.item_type='Fresh Product'
     and dp.status = 'Active'
     and fs.sales_type = 'Sale'
-    and il.total_loaded_quantity > 0

@@ -6,7 +6,7 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2 import sql
 
-from etl.staging import BASE_DIR
+from etl_legacy.staging import BASE_DIR
 
 load_dotenv()
 

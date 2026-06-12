@@ -160,7 +160,7 @@ On the staging step the following tests are implemented:
 ```bash
 docker-compose up -d              # 1. Start PostgreSQL
 python -m ingestion.load_raw      # 2. Load raw files into DB
-cd analytics
+cd analytics_dbt
 dbt seed --profiles-dir .         # 3. Load seed lookup tables
 dbt run --profiles-dir .          # 4. Run transformations (staging → dwh → marts)
 # dbt test --profiles-dir .         # 5. Validate data quality

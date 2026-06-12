@@ -426,8 +426,6 @@ models:
         description: Total quantity of items loaded onto the flight for this product (excludes zero quantities)
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "> 0"
       - name: sold_quantity
         description: Quantity of items sold during the flight
         tests:

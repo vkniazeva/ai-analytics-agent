@@ -11,7 +11,7 @@ from traceback import print_tb
 
 import pandas as pd
 
-from etl.staging import BASE_DIR, PROCESSED_PATH
+from etl_legacy.staging import BASE_DIR, PROCESSED_PATH
 
 # CONFIG / PATH
 DWH_PATH = BASE_DIR / "data/dwh"

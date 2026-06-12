@@ -58,7 +58,7 @@ DATASETS = {
     "schedule": {
         "glob": "schedule*.csv",
         "type": "csv",
-        "read_kwargs": {"delimiter": ";"},
+        "read_kwargs": {"delimiter": ","},
         "drop_columns": [],
     },
     "product_catalog": {
@@ -69,6 +69,12 @@ DATASETS = {
     },
     "bank": {
         "glob": "bank*.csv",
+        "type": "csv",
+        "read_kwargs": {"delimiter": ","},
+        "drop_columns": [],
+    },
+    "orders": {
+        "glob": "order_summary*.csv",
         "type": "csv",
         "read_kwargs": {"delimiter": ","},
         "drop_columns": [],
