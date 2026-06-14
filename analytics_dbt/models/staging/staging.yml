@@ -216,6 +216,29 @@ models:
         tests:
           - not_null
 
+  - name: stg_line
+    description: "Line data showing flight routing information without datetime details"
+    columns:
+      - name: line_id
+        description: "Unique identifier of the connected flights catered together"
+        tests:
+          - not_null
+      - name: flight_no
+        description: "Flight number (masked, starts with AB)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "like 'AB%'"
+      - name: origin
+        description: "Departure airport mapped to anonymized city (cities_mapping in seed)"
+        tests:
+          - not_null
+      - name: destination
+        description: "Arrival airport mapped to anonymized city (cities_mapping in seed)"
+        tests:
+          - not_null
+
+
   - name: stg_items_load
     description: "Individual product loading information per flight, containing assigned loads (sets of trolleys) and product quantities loaded on them. Essential for inventory and demand forecasting."
     columns:

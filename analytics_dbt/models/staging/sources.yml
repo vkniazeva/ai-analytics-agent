@@ -169,3 +169,12 @@ sources:
           - name: item_reference
           - name: item_name
           - name: total_qty_loaded
+
+      - name: line_load
+        description: "Flight line information"
+        columns:
+          - name: line_id
+          - name: flight_no
+          - name: iata_departure
+          - name: iata_destination
+          - name: order_no

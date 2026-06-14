@@ -7,7 +7,7 @@ select
     dt.am_pm as am_pm,
     df.origin as origin,
     df.destination as destination,
-    df.date as date,
+    dd.date_key as date,
     dd.is_weekend as is_weekend,
     dd.week_day as week_day,
     il.load_id as load_id,

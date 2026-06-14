@@ -162,6 +162,30 @@ models:
       - name: price
         description: Product price
 
+  - name: dim_flight_load
+    description: "Loading context for every flight instance. Grain: flight_key"
+    columns:
+        - name: line_id
+          description: "Catering line id grouping connected flights"
+          tests:
+            - not_null
+        - name: flight_key
+          description: "Foreign key to dim_flights"
+          tests:
+            - not_null
+            - unique
+            - relationships:
+                to: ref('dim_flights')
+                field: flight_key
+        - name: load_id
+          description: "Load identifier (set of trolleys) associated with this flight"
+          tests:
+            - not_null
+    tests:
+        - dbt_utils.unique_combination_of_columns:
+            combination_of_columns:
+              - flight_key
+
   - name: fact_sales
     description: "Sales transactions fact table. Grain: one row per flight_number + date + product_key + sales_type (session_id and load_id are 1:1 with flight)"
     columns:

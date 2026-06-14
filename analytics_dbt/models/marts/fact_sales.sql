@@ -1,7 +1,7 @@
 with tmp as (
     select
-        s.flight_no as flight_number,
-        {{ date_to_key('s.date') }} as date,
+        f.flight_no as flight_number,
+        {{ date_to_key('f.date') }} as date,
         {{ round_hour_from_time('f.time') }} as hour_of_departure,
         s.session_id as sales_session_id,
         s.load_id as load_id,
