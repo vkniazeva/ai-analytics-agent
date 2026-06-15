@@ -79,6 +79,12 @@ DATASETS = {
         "read_kwargs": {"delimiter": ","},
         "drop_columns": [],
     },
+    "line_load": {
+        "glob": "lines*.csv",
+        "type": "csv",
+        "read_kwargs": {"delimiter": ","},
+        "drop_columns": [],
+    }
 }
 
 
