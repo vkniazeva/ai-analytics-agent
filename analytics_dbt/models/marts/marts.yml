@@ -162,8 +162,8 @@ models:
       - name: price
         description: Product price
 
-  - name: dim_flight_load
-    description: "Loading context for every flight instance. Grain: flight_key"
+  - name: bridge_flight_load
+    description: "Bridge table linking flights to their loading context. Grain: flight_key"
     columns:
         - name: line_id
           description: "Catering line id grouping connected flights"
@@ -387,7 +387,7 @@ models:
             - card_number_prefix
 
   - name: mart_fresh_food_order_sale
-    description: "Fresh food loading and sales mart combining item-level load quantities with actual sales, enriched with flight, temporal, and product attributes. Serves as the foundation for demand forecasting models."
+    description: "Fresh food sales mart with all possible flight-product combinations, enriched with flight, temporal, and product attributes (filtered by only loaded flight items). Serves as the foundation for demand forecasting models."
     columns:
       - name: flight_key
         description: Foreign key to dim_flights - unique flight identifier
@@ -400,18 +400,6 @@ models:
         description: Flight number
         tests:
           - not_null
-      - name: hour_of_departure
-        description: Hour of departure
-        tests:
-          - relationships:
-              to: ref('dim_time')
-              field: time_key
-      - name: is_night
-        description: Boolean indicating night time departure
-      - name: day_period
-        description: Period of day (Night, Morning, Day, Evening)
-      - name: am_pm
-        description: AM/PM indicator
       - name: origin
         description: Origin airport
         tests:
@@ -421,45 +409,46 @@ models:
         tests:
           - not_null
       - name: date
-        description: Flight date key
+        description: Flight date (timestamp)
         tests:
-          - relationships:
-              to: ref('dim_date')
-              field: date_key
+          - not_null
+      - name: month_name
+        description: Month name
+      - name: year
+        description: Year
+        tests:
+          - not_null
+      - name: weekday_name
+        description: Weekday name
       - name: is_weekend
         description: Boolean indicating weekend
-      - name: week_day
-        description: Day of week
-      - name: load_id
-        description: Load identifier (order number for trolley set)
+      - name: hour_of_departure
+        description: Hour of departure
         tests:
-          - not_null
-      - name: slip_id
-        description: Sales slip/receipt identifier (transaction level)
-        tests:
-          - not_null
+          - relationships:
+              to: ref('dim_time')
+              field: time_key
+      - name: day_period
+        description: Period of day (Night, Morning, Day, Evening)
+      - name: is_night
+        description: Boolean indicating night time departure
+      - name: am_pm
+        description: AM/PM indicator
       - name: item_id
         description: Item identifier
         tests:
           - not_null
-      - name: item_category
-        description: Product category
-      - name: item_price
+          - relationships:
+              to: ref('dim_products')
+              field: item_id
+      - name: price
         description: Product price
-      - name: loaded_quantity
-        description: Total quantity of items loaded onto the flight for this product (excludes zero quantities)
-        tests:
-          - not_null
       - name: sold_quantity
-        description: Quantity of items sold during the flight
+        description: Quantity of items sold during the flight (0 if no sales)
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "> 0"
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - flight_key
-            - load_id
-            - slip_id
             - item_id
