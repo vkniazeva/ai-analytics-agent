@@ -10,135 +10,157 @@ skinparam entity {
     BorderColor #333333
 }
 
-entity "dim_flight" {
-    * flight_sur_id : VARCHAR(32) <<PK>>
-    --
-    flight_no : VARCHAR
-    date : DATE
-    time : TIME
-    origin : VARCHAR
-    destination : VARCHAR
-    line_id : VARCHAR
-    source : VARCHAR
-}
-
-entity "dim_product" {
-    * product_sur_id : VARCHAR(32) <<PK>>
-    --
-    item_id : VARCHAR
-    status : VARCHAR
-    item_category : VARCHAR
-    is_food : BOOLEAN
-    item_type : VARCHAR
-    source : VARCHAR
-}
-
+' Dimensions
 entity "dim_date" {
-    * date_sur_id : INTEGER <<PK>>
+    * date_key : INTEGER <<PK>>
     --
     date : DATE
     year : INTEGER
     month : INTEGER
+    month_name : VARCHAR
     day : INTEGER
-    weekday : INTEGER
+    quarter : INTEGER
+    week_day : INTEGER
     weekday_name : VARCHAR
     is_weekend : BOOLEAN
+    season : VARCHAR
 }
 
-entity "dim_session" {
-    * session_sur_id : VARCHAR(32) <<PK>>
+entity "dim_time" {
+    * time_key : INTEGER <<PK>>
     --
-    session_id : BIGINT
+    hour : INTEGER
+    is_night : BOOLEAN
+    day_period : VARCHAR
+    am_pm : VARCHAR
+}
+
+entity "dim_flights" {
+    * flight_key : VARCHAR(32) <<PK>>
+    --
+    flight_key_with_date : VARCHAR(32) <<AK>>
+    flight_number : VARCHAR
+    origin : VARCHAR
+    destination : VARCHAR
+    date : INTEGER <<FK>>
+    hour_of_departure : INTEGER <<FK>>
+    time : TIME
+}
+
+entity "dim_products" {
+    * product_key : VARCHAR(32) <<PK>>
+    --
+    item_id : VARCHAR
+    status : VARCHAR
+    category : VARCHAR
+    is_food : BOOLEAN
+    item_type : VARCHAR
+    price : NUMERIC
+}
+
+entity "dim_sessions" {
+    * sales_session_id : VARCHAR(32) <<PK>>
+    --
     is_offline_mode : BOOLEAN
 }
 
 entity "dim_card" {
-    * card_sur_key : VARCHAR(32) <<PK>>
+    * card_number_prefix : VARCHAR <<PK>>
     --
-    card_number_prefix : VARCHAR
-    card_type : VARCHAR
-    brand : VARCHAR
-    type : VARCHAR
-    category : VARCHAR
-    issuer : VARCHAR
-    country_short : VARCHAR
-    country : VARCHAR
+    source_card_type : VARCHAR
+    card_brand : VARCHAR
+    reference_card_type : VARCHAR
+    card_category : VARCHAR
+    card_issuer : VARCHAR
+    issuer_country : VARCHAR
 }
 
-entity "dim_load" {
-    * load_sur_id : VARCHAR(32) <<PK>>
+' Bridge Tables
+entity "bridge_flight_load" {
+    * flight_key : VARCHAR(32) <<PK,FK>>
     --
     line_id : VARCHAR
     load_id : VARCHAR
 }
 
+' Facts
 entity "fact_sales" {
-    * sales_id : VARCHAR(32) <<PK>>
+    * sale_transaction_key : VARCHAR(32) <<PK>>
     --
-    session_key : VARCHAR(32) <<FK>>
     flight_key : VARCHAR(32) <<FK>>
+    sales_session_id : VARCHAR(32) <<FK>>
     product_key : VARCHAR(32) <<FK>>
-    date_key : INTEGER <<FK>>
+    load_id : VARCHAR
     slip_id : UUID
     sales_type : VARCHAR
-    price : NUMERIC
-    quantity : INTEGER
+    currency : VARCHAR
+    sold_quantity : INTEGER
     purchase_amount : NUMERIC
     discount_amount : NUMERIC
 }
 
-entity "fact_payment" {
-    * payment_id : VARCHAR(32) <<PK>>
+entity "fact_payments" {
+    * payment_transaction_key : VARCHAR(32) <<PK>>
     --
-    session_key : VARCHAR(32) <<FK>>
     flight_key : VARCHAR(32) <<FK>>
-    card_key : VARCHAR(32) <<FK>>
-    date_key : INTEGER <<FK>>
+    sales_session_id : VARCHAR(32) <<FK>>
+    card_number_prefix : VARCHAR <<FK>>
+    load_id : VARCHAR
     slip_id : UUID
     sales_type : VARCHAR
     payment_type : VARCHAR
-    purchase_amount : NUMERIC
+    purchase_amount_main : NUMERIC
 }
 
 entity "fact_pax" {
-    * pax_sur_id : VARCHAR(32) <<PK>>
+    * passenger_count_key : VARCHAR(32) <<PK>>
     --
     flight_key : VARCHAR(32) <<FK>>
-    date_key : INTEGER <<FK>>
-    class : VARCHAR
-    pax_quantity : INTEGER
+    travel_class : VARCHAR
+    number_of_passengers : INTEGER
 }
 
 entity "fact_wastage" {
-    * wastage_sur_id : VARCHAR(32) <<PK>>
+    * wastage_record_key : VARCHAR(32) <<PK>>
     --
-    flight_key : VARCHAR(32) <<FK>>
-    item_key : VARCHAR(32) <<FK>>
-    date_key : INTEGER <<FK>>
+    flight_key_with_date : VARCHAR(32) <<FK>>
+    product_key : VARCHAR(32) <<FK>>
+    load_id : VARCHAR
     load_quantity : INTEGER
     sold_quantity : INTEGER
     wastage_quantity : INTEGER
     fresh_wastage_quantity : INTEGER
 }
 
-dim_flight ||--o{ fact_sales
-dim_flight ||--o{ fact_payment
-dim_flight ||--o{ fact_pax
-dim_flight ||--o{ fact_wastage
+entity "fact_items_load" {
+    * item_load_key : VARCHAR(32) <<PK>>
+    --
+    flight_key : VARCHAR(32) <<FK>>
+    product_key : VARCHAR(32) <<FK>>
+    load_id : VARCHAR
+    total_loaded_quantity : INTEGER
+    potential_error : VARCHAR
+}
 
-dim_session ||--o{ fact_sales
-dim_session ||--o{ fact_payment
+' Dimension Relationships
+dim_date ||--o{ dim_flights
+dim_time ||--o{ dim_flights
 
-dim_product ||--o{ fact_sales
-dim_product ||--o{ fact_wastage
+' Dimension to Fact Relationships
+dim_flights ||--o{ fact_sales
+dim_flights ||--o{ fact_payments
+dim_flights ||--o{ fact_pax
+dim_flights ||--o{ fact_wastage
+dim_flights ||--o{ fact_items_load
+dim_flights ||--|| bridge_flight_load
 
-dim_card ||--o{ fact_payment
+dim_sessions ||--o{ fact_sales
+dim_sessions ||--o{ fact_payments
 
-dim_date ||--o{ fact_sales
-dim_date ||--o{ fact_payment
-dim_date ||--o{ fact_pax
-dim_date ||--o{ fact_wastage
+dim_products ||--o{ fact_sales
+dim_products ||--o{ fact_wastage
+dim_products ||--o{ fact_items_load
 
-dim_load ||--o{ fact_wastage
+dim_card ||--o{ fact_payments
 
 @enduml

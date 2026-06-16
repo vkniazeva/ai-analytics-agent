@@ -33,12 +33,14 @@ This project simulates an airline retail analytics environment and demonstrates 
 
 ## Features
 
-* Layered data architecture (raw → processed → DWH → marts)
-* dbt-powered transformations (replaced legacy Pandas ETL)
-* Star schema data warehouse
-* PostgreSQL serving layer
+* Layered data architecture (raw → staging → intermediate → marts)
+* dbt-powered transformations (full ELT in PostgreSQL)
+* Star schema data warehouse with bridge tables
+* PostgreSQL serving layer with automated testing
 * Metadata sync (dbt models & lineage → PostgreSQL)
 * Superset BI dashboards
+* Fresh food demand forecasting (EDA module)
+* (In Progress) ML forecasting models
 * (Planned) Analytics API
 * (Planned) LLM-powered analytics agent
 
@@ -46,33 +48,7 @@ This project simulates an airline retail analytics environment and demonstrates 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-
-    subgraph Data_Layer
-        A[Raw Data CSV Excel]
-    end
-
-    subgraph Processing_Layer
-        B[ETL Pandas Cleaning Standardization]
-        C[Processed Layer Parquet]
-        D[DWH Layer Star Schema]
-        E[Marts Layer]
-    end
-
-    subgraph Serving_Layer
-        F[PostgreSQL]
-        G[Superset]
-        H[Analytics API Future]
-    end
-
-    subgraph AI_Layer
-        I[LLM Agent Future]
-    end
-
-    A --> B --> C --> D --> E --> F --> G
-    F --> H --> I
-```
+![project_architecture_v2.png](docs/diagrams/project_architecture_v2.png)
 
 ---
 
@@ -80,30 +56,58 @@ flowchart LR
 
 ### Data Processing Flow
 
-| Step | Layer            | Description                                   |
-| ---- | ---------------- | --------------------------------------------- |
-| 1    | `data/raw`       | Raw CSV / Excel files                         |
-| 2    | `data/processed` | Cleaned & standardized data (temporary layer) |
-| 3    | `data/dwh`       | Star schema (dims + facts)                    |
-| 4    | `data/marts`     | Aggregated analytical tables                  |
-| 5    | PostgreSQL       | Serving layer                                 |
+| Step | Layer               | Tool      | Description                                      |
+|------|---------------------|-----------|--------------------------------------------------|
+| 1    | `data/raw`          | Python    | Raw data ingestion (CSV/Excel → PostgreSQL)      |
+| 2    | `staging`           | dbt       | Raw data cleaning & standardization              |
+| 3    | `intermediate`      | dbt       | Business logic transformations & enrichment      |
+| 4    | `marts/dimensions`  | dbt       | Star schema dimensions (SCD Type 1)              |
+| 5    | `marts/facts`       | dbt       | Star schema fact tables                          |
+| 6    | `marts/bridges`     | dbt       | Bridge tables for many-to-many relationships     |
+| 7    | `marts/analytics`   | dbt       | Denormalized analytical tables                   |
+| 8    | PostgreSQL          | dbt       | Serving layer with tests & constraints           |
+
+**Architecture**: Pure ELT - all transformations happen in-database via dbt SQL models.
 
 ---
 
-### ⚠️ Important Note on Processing Layer
+### ✅ dbt Migration Completed
 
-The **processed layer (Parquet + Pandas)** is currently a **temporary implementation**.
+The **full migration from Pandas ETL to dbt** is now complete.
 
-Planned evolution:
+**Key advantages achieved:**
 
-* Replace Pandas transformations with **SQL-based transformations inside the data warehouse**
-* Move toward:
+1. **Declarative Transformations**
+   - SQL-based models with explicit dependencies
+   - Version-controlled transformation logic
+   - Automatic DAG generation and execution order
 
-  * ELT instead of ETL
-  * dbt / SQL models (or similar approach)
-  * database-native joins and aggregations
+2. **Data Quality & Testing**
+   - Built-in data quality tests (uniqueness, not_null, relationships)
+   - Custom business logic tests
+   - Automated test execution with every run
 
-> Pandas is used here as a prototyping tool, not as a final data processing engine.
+3. **Performance & Scalability**
+   - Database-native transformations (no data movement to Python)
+   - Incremental models support (future-ready)
+   - Materialization strategies (table, view, ephemeral)
+
+4. **Documentation & Lineage**
+   - Auto-generated data catalog from model definitions
+   - Column-level descriptions and metadata
+   - Full lineage tracking (manifest.json → metadata schema)
+
+5. **Developer Experience**
+   - Modular SQL with Jinja macros for reusability
+   - Easy refactoring with automatic dependency resolution
+   - Clear separation of concerns (staging → intermediate → marts)
+
+6. **Observability**
+   - Detailed run logs and test results
+   - Model-level performance metrics
+   - Data freshness checks (future capability)
+
+> The legacy Pandas processing layer has been fully retired. All transformations now run as dbt models in PostgreSQL.
 
 ---
 
@@ -123,17 +127,13 @@ Synthetic airline retail data:
 
 ### Data Processing
 
-The processed layer ensures:
+The dbt transformation pipeline ensures:
 
-* standardized column names
-* consistent data types
-* anonymization
-* cross-source enrichment
-* basic data quality checks:
-
-  * drop duplicates
-  * drop invalid NULLs
-  * filter negative values
+* **Staging layer**: Standardized column names, consistent data types, basic cleaning
+* **Intermediate layer**: Business logic transformations, cross-source enrichment, surrogate key generation
+* **Marts layer**: Star schema (dimensions + facts), analytical tables, bridge tables
+* **Data quality**: Automated tests (uniqueness, relationships, not_null, custom business rules)
+* **Validation**: Every model run includes test execution to ensure data integrity
 
 ---
 
@@ -141,51 +141,58 @@ The processed layer ensures:
 
 ### Dimensions
 
-* `dim_date`
-* `dim_flight`
-* `dim_product`
-* `dim_session`
-* `dim_card`
-* `dim_load`
+| Dimension      | Grain                                    | Key Attributes                        |
+|----------------|------------------------------------------|---------------------------------------|
+| `dim_date`     | One row per calendar date                | year, month, quarter, weekday, season |
+| `dim_time`     | One row per hour of day (0-23)           | day_period, is_night, am_pm           |
+| `dim_flights`  | One row per flight + date + hour         | flight_number, origin, destination    |
+| `dim_products` | One row per item_id                      | category, item_type, price, status    |
+| `dim_sessions` | One row per sales_session_id             | is_offline_mode                       |
+| `dim_card`     | One row per card_number_prefix (BIN)     | card_brand, issuer, country           |
+
+### Bridge Tables
+
+| Bridge                | Grain                | Purpose                                        |
+|-----------------------|----------------------|------------------------------------------------|
+| `bridge_flight_load`  | One row per flight   | Links flights to loading context (line_id, load_id) |
 
 ### Facts
 
-* `fact_sales`
-* `fact_payment`
-* `fact_pax`
-* `fact_wastage`
+| Fact              | Grain                                              | Key Measures                        |
+|-------------------|----------------------------------------------------|-------------------------------------|
+| `fact_sales`      | slip_id + product + sales_type                     | sold_quantity, purchase_amount      |
+| `fact_payments`   | slip_id + sales_type + payment_type + card_prefix  | purchase_amount_main                |
+| `fact_pax`        | flight + travel_class                              | number_of_passengers                |
+| `fact_wastage`    | flight_date + product + load_id                    | load_qty, sold_qty, wastage_qty     |
+| `fact_items_load` | flight + load_id + product                         | total_loaded_quantity               |
 
-Dimension-Fact Relationships:
-```mermaid
-flowchart LR
-
-    dim_flight --> fact_pax
-    dim_flight --> fact_payment
-    dim_flight --> fact_sales
-    dim_flight --> fact_wastage
-
-    dim_session --> fact_payment
-    dim_session --> fact_sales
-
-    dim_product --> fact_sales
-    dim_product --> fact_wastage
-
-    dim_card --> fact_payment
-
-    dim_load --> fact_wastage
-
-    dim_date --> fact_sales
-```
 ---
 
-### Fact Table Grains
+### Dimension-Fact Relationships
 
-| Table        | Grain                  |
-| ------------ | ---------------------- |
-| fact_sales   | item-level transaction |
-| fact_payment | payment event          |
-| fact_pax     | flight + class         |
-| fact_wastage | product per flight     |
+```mermaid
+flowchart LR
+    dim_date --> dim_flights
+    dim_time --> dim_flights
+    
+    dim_flights --> fact_sales
+    dim_flights --> fact_payments
+    dim_flights --> fact_pax
+    dim_flights --> fact_wastage
+    dim_flights --> fact_items_load
+    dim_flights --> bridge_flight_load
+
+    dim_sessions --> fact_payments
+    dim_sessions --> fact_sales
+
+    dim_products --> fact_sales
+    dim_products --> fact_wastage
+    dim_products --> fact_items_load
+
+    dim_card --> fact_payments
+    
+    bridge_flight_load --> fact_items_load
+```
 
 ---
 
@@ -197,15 +204,33 @@ flowchart LR
 
 ## Data Marts
 
-![Data Marts](docs/diagrams/data_marts.svg)
+### Analytical Tables
 
+| Mart                        | Grain                 | Purpose                                                |
+|-----------------------------|-----------------------|--------------------------------------------------------|
+| `mart_fresh_food_order_sale`| flight + item_id      | Fresh food demand forecasting with temporal & route features |
 
+**Schema**: All marts are in the `mart` PostgreSQL schema alongside dimensions and facts.
 
-### Available Marts
+**Features**:
+- Pre-joined dimensional attributes (origin, destination, weekday, hour, etc.)
+- Filtered to relevant product categories (Fresh Products, active items)
+- Zero-sales included (critical for demand forecasting)
+- Optimized for ML model training
 
-* `mart_sales_performance`
-* `mart_product_sales`
-* `mart_flight_sales`
+---
+
+### Mart Structure
+
+`mart_fresh_food_order_sale` combines:
+- Flight context from `bridge_flight_load`
+- Flight details from `dim_flights`
+- Temporal features from `dim_date` and `dim_time`
+- Product attributes from `dim_products`
+- Loading data from `fact_items_load` (filter for loaded items)
+- Sales actuals from `fact_sales` (aggregated by load_id + product)
+
+This enables forecasting models to predict fresh food demand at the flight-product level.
 
 ---
 
@@ -285,26 +310,33 @@ admin / admin
 
 ### Completed
 
-* Migration from Pandas ETL → dbt transformations
-* Data warehouse (star schema)
-* Data marts (dbt models)
-* PostgreSQL loading
-* PK/FK constraints and indexes
-* Superset dashboards
-* Metadata sync: dbt models & lineage → PostgreSQL `metadata` schema
-  * `metadata.models` - all dbt models with layer, materialization, tags
-  * `metadata.dependencies` - model lineage graph
+* **Full dbt migration** - Pandas ETL fully replaced with dbt SQL models
+* **Star schema warehouse** with dimensions, facts, and bridge tables
+* **Data marts** - Analytical tables for forecasting use cases
+* **PostgreSQL serving layer** with PK/FK constraints and indexes
+* **Automated testing** - dbt tests for data quality (uniqueness, relationships, not_null)
+* **Superset dashboards** for BI visualization
+* **Metadata sync** - dbt models & lineage → PostgreSQL `metadata` schema
+  * `metadata.models` - model catalog with layer, materialization, tags
+  * `metadata.dependencies` - full lineage graph
+* **Fresh food forecasting module**
+  * EDA notebook with 10-section analysis
+  * `mart_fresh_food_order_sale` analytical table
+  * Feature analysis and model strategy documentation
 
 ---
 
 ### In Progress
 
-* Data model stabilization
+* ML forecasting models (baseline, statistical, tree-based)
+* Model evaluation and selection
+* Forecasting pipeline automation
 
 ---
 
 ### Next Steps
 
+* Production forecasting pipeline
 * Analytics API (FastAPI)
 * Semantic layer (metrics definitions)
 * LLM agent integration
@@ -315,20 +347,30 @@ admin / admin
 
 ### Data Samples
 
-| Layer     | Location                  |
-| --------- | ------------------------- |
-| Processed | `data/processed/samples/` |
-| DWH       | `data/dwh/samples/`       |
-| Marts     | `data/marts/samples/`     |
+Data samples can be exported from PostgreSQL using dbt or SQL queries:
+
+```bash
+# Export staging models
+psql -d ai_analytics -c "COPY staging.stg_sales TO '/tmp/sample_sales.csv' WITH CSV HEADER LIMIT 100"
+
+# Or query directly
+psql -d ai_analytics -c "SELECT * FROM mart.dim_flights LIMIT 10"
+```
+
+**dbt schemas in PostgreSQL:**
+- `staging.*` - Cleaned raw data
+- `intermediate.*` - Transformed business entities  
+- `mart.*` - Star schema and analytical tables
+- `metadata.*` - dbt model catalog and lineage
 
 ---
 
 ### Notes
 
 * Data is anonymized
-* Mapping configs are external
+* Mapping configs are external (CSV seeds in dbt)
 * Raw data is not version-controlled
-* Processed layer is temporary and will be replaced with SQL-based transformations
+* All transformations are dbt-based SQL models (ELT architecture)
 
 ### Regenerating Diagrams
 
