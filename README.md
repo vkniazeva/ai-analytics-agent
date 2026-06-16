@@ -198,7 +198,7 @@ flowchart LR
 
 ## Data Model (ER Diagram)
 
-![Data Model](docs/diagrams/data_model.svg)
+![data_model.svg](docs/diagrams/data_model.svg)
 
 ---
 
