@@ -1,3 +1,18 @@
+with pax_by_flight as (
+    select
+        fp.flight_key,
+        sum(fp.number_of_passengers) as total_passengers
+    from {{ ref('fact_pax') }} fp
+    group by fp.flight_key
+),
+avg_pax_by_flight_number as (
+    select
+        f.flight_number,
+        avg(pax.total_passengers) as avg_passengers
+    from pax_by_flight pax
+    join {{ ref('dim_flights') }} f on pax.flight_key = f.flight_key
+    group by f.flight_number
+)
 select
     f.flight_key,
     f.flight_number,
@@ -12,9 +27,15 @@ select
     dt.day_period,
     dt.is_night,
     dt.am_pm,
+    coalesce(pax.total_passengers, avg_pax.avg_passengers) as number_of_passengers,
     dp.item_id,
+    dp.category,
     dp.price,
-    coalesce(s.sold_quantity, 0) as sold_quantity
+    coalesce(s.sold_quantity, 0) as sold_quantity,
+    case
+        when pax.total_passengers is null and avg_pax.avg_passengers is null then 'no_pax_data'
+        else null
+    end as potential_error
 from {{ ref('bridge_flight_load') }} bfl
 
 join {{ ref('dim_flights') }} f
@@ -32,6 +53,12 @@ join {{ ref('dim_products') }} dp
         and dp.item_type = 'Fresh Product'
         and dp.category != 'BOL Products'
         and dp.status = 'Active'
+
+left join pax_by_flight pax
+    on pax.flight_key = f.flight_key
+
+left join avg_pax_by_flight_number avg_pax
+    on avg_pax.flight_number = f.flight_number
 
 left join (
     select

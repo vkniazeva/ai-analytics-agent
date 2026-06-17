@@ -5,7 +5,12 @@ with flights as (
         destination as destination,
         {{ date_to_key('date') }} as date,
         {{ round_hour_from_time('time') }} as hour_of_departure,
-        time as time
+        time as time,
+        source,
+        case
+            when source != 'SCHEDULE' then 'not_in_schedule'
+            else null
+        end as potential_error
 from {{ ref('int_flights')}}
 )
 select
@@ -18,5 +23,7 @@ select
     destination as destination,
     date as date,
     hour_of_departure as hour_of_departure,
-    time as time
+    time as time,
+    source as source,
+    potential_error as potential_error
 from flights

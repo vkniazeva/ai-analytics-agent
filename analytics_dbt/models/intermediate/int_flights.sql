@@ -97,7 +97,11 @@ items_load as (
                          when origin != 'UNKNOWN' and destination != 'UNKNOWN' then 2
                          else 3
                     end,
-                    case when time is not null then 1 else 2 end
+                    case when time is not null then 1 else 2 end,
+                    source,
+                    time,
+                    origin,
+                    destination
             ) as rn
     from unioned
     )

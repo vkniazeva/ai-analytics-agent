@@ -434,6 +434,8 @@ models:
         description: Boolean indicating night time departure
       - name: am_pm
         description: AM/PM indicator
+      - name: number_of_passengers
+        description: Total passengers on flight (actual or flight_number average, NULL for new flights without history)
       - name: item_id
         description: Item identifier
         tests:
@@ -441,12 +443,16 @@ models:
           - relationships:
               to: ref('dim_products')
               field: item_id
+      - name: category
+        description: Product category
       - name: price
         description: Product price
       - name: sold_quantity
         description: Quantity of items sold during the flight (0 if no sales)
         tests:
           - not_null
+      - name: potential_error
+        description: Data quality flag - 'no_pax_data' when passenger count unavailable (new flight without history)
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
