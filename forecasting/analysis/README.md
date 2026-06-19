@@ -433,8 +433,6 @@ Given the short timeframe of the dataset, month-level aggregations reflect calen
 
 ## Conclusion
 
-## Conclusion
-
 The exploratory analysis identifies `item_id`, `route`, `day_period`, and `pax_bin` as the most informative features for demand forecasting, while `is_weekend`, `weekday_name`, 
 and temporal features show no meaningful predictive signal and are candidates for exclusion.
 
