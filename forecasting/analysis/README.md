@@ -326,6 +326,61 @@ Given the absence of any meaningful signal, this feature is unlikely to contribu
 unless interaction effects with other features are identified at a later stage.
 
 
+### Feature Binning Analysis
+
+#### Passenger Count 
+
+To capture the non-linear relationship between passenger load and sales, 
+the number_of_passengers feature was discretized into four bins reflecting the operational capacity characteristics of the A320/A321 fleet.
+
+To capture the non-linear relationship between passenger load and sales, the `number_of_passengers` feature was 
+cut into four bins reflecting the operational capacity characteristics of the A320/A321 fleet.
+
+| Bin     | total_sales   | flights_count  | avg_sale_per_flight   | avg_sale_per_pax   |
+|---------|---------------|----------------|-----------------------|--------------------|
+| 0–100   | 4,900         | 4,775          | 1.03                  | 0.0133             |
+| 100–150 | 18,214        | 12,600         | 1.45                  | 0.0111             |
+| 150–180 | 53,185        | 41,930         | 1.27                  | 0.0075             |
+| 180+    | 353           | 305            | 1.16                  | 0.0044             |
+
+Two distinct patterns emerge from the analysis.
+The average sales per passenger decreases monotonically across bins — from 0.0133 in the lowest load segment to 0.0044 for flights above 180 passengers
+— suggesting that individual purchase probability declines as cabin occupancy increases, likely due to reduced crew availability 
+per passenger and shorter effective service windows on high-load flights.
+
+Average sales per flight, however, follow a non-monotonic pattern, peaking in the 100–150 passenger range (1.45 units) rather than at maximum capacity. 
+The 150–180 bin dominates in total volume purely due to flight frequency — it contains the largest share of observations, consistent with typical A320/A321 operating loads.
+
+The scatter plot effect observed in the earlier analysis — an apparent positive relationship up to ~175 passengers followed by a sharp drop — is therefore partly a frequency artifact: 
+high-capacity flights (180+) are rare in this dataset (305 flights), and their low average sales reflect both sparse data and a genuine per-passenger decline. 
+The `pax_bin` feature is retained for modelling as each segment exhibits a distinguishable sales profile.
+
+
+#### Price
+
+The `price` feature was discretized into three bins: Low (≤7), Medium (8–17), and High (18–30).
+
+| price_bin   |  mean |  sum   | count  |
+|-------------|-------|--------|--------|
+| Low         | 1.16  | 21,481 | 18,579 |
+| Medium      | 0.98  | 17,827 | 18,115 |
+| High        | 1.63  | 37,344 | 22,916 |
+
+The initial analysis suggested that high-priced items outperform lower price tiers (mean 1.63 vs 1.16). 
+However, this result is driven entirely by a single item `T3L4D007` (price=28.0) which was identified earlier as a strong sales outlier. 
+Excluding this item reveals the opposite pattern:
+
+| price_bin | mean (excl. T3L4D007) |
+|-----------|-----------------------|
+| Low       | 1.16                  |
+| Medium    | 0.98                  |
+| High      | 0.69                  |
+
+For the remaining 9 products, sales decrease monotonically with price — a pattern consistent with standard price elasticity of demand in an onboard retail context. 
+This finding suggests that `price_bin` carries a meaningful signal only in conjunction with `item_id`, 
+and that the two features should be considered together rather than independently in the modelling stage.
+
+
 ### Sales by Route, Origin and Destination
 
 Analysis is based on the top 10 routes, origins, and destinations by total sales volume.
@@ -366,4 +421,31 @@ Among non-hub cities, `city_017`, `city_003`, and `city_013` lead in average sal
 > If model performance is insufficient, an alternative aggregation at the route level (combining outbound and return segments as a single catering line) may be considered, 
 > reflecting the operational reality that catering for both directions is planned simultaneously at the hub.
 
+### Time Series Analysis
 
+![time_analysis.png](assests/time_analysis.png)
+
+Temporal analysis across weekdays and months reveals no consistent patterns in sales behaviour. 
+Daily sales volume and average sales per observation remain relatively stable throughout the observation period (November 2025 – February 2026), 
+with no pronounced weekly or monthly seasonality detected. 
+The sharp decline observed at the end of February 2026 is attributable to incomplete data for the final days of the observation period and is excluded from trend interpretation. 
+Given the short timeframe of the dataset, month-level aggregations reflect calendar effects of a single cycle rather than repeatable seasonal trends, limiting their predictive utility.
+
+## Conclusion
+
+## Conclusion
+
+The exploratory analysis identifies `item_id`, `route`, `day_period`, and `pax_bin` as the most informative features for demand forecasting, while `is_weekend`, `weekday_name`, 
+and temporal features show no meaningful predictive signal and are candidates for exclusion.
+
+Key findings that directly shape the modelling approach:
+
+- The target variable is zero-inflated (~40% zeros) with extreme right skew, ruling out standard regression approaches and MSE-based optimization
+- `T3L4D007` is a structural outlier that disproportionately influences price-level aggregations — item identity must be treated as a primary feature rather than a proxy
+- Passenger load exhibits a non-linear threshold effect with an optimal sales conversion window of 100–150 passengers, motivating the use of `pax_bin` over the raw continuous feature
+- Route-level variation is substantial and symmetric across outbound/return pairs, consistent with hub-based catering operations — route identity carries strong predictive signal
+- Price elasticity is product-dependent and cannot be interpreted independently of `item_id`
+
+Based on these characteristics, the modelling stage will evaluate the following approaches: 
+a historical mean baseline aggregated at flight-product level, KNN, Random Forest, Poisson regression, and a two-stage classifier-regressor pipeline. 
+If flight-level granularity proves insufficient, dataset re-aggregation at the route level will be considered as an alternative modelling unit.
