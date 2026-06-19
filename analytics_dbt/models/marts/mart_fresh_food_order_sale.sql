@@ -34,6 +34,7 @@ select
     coalesce(s.sold_quantity, 0) as sold_quantity,
     case
         when pax.total_passengers is null and avg_pax.avg_passengers is null then 'no_pax_data'
+        when coalesce(pax.total_passengers, avg_pax.avg_passengers) = 0 then 'zero_pax_count'
         else null
     end as potential_error
 from {{ ref('bridge_flight_load') }} bfl

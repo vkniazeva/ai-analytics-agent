@@ -29,5 +29,9 @@ select
     date as date,
     hour_of_departure as hour_of_departure,
     travel_class as travel_class,
-    number_of_passengers as number_of_passengers
+    number_of_passengers as number_of_passengers,
+        case
+            when number_of_passengers = 0 then 'zero_pax_count'
+            else null
+        end as potential_error
 from replaced

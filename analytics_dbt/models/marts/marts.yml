@@ -292,11 +292,15 @@ models:
           - not_null
       - name: number_of_passengers
         description: Number of passengers
+      - name: potential_error
+        description: Data quality flag - 'zero_pax_count' when number of passengers equals 0
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - flight_key
             - travel_class
+      - dbt_utils.expression_is_true:
+          expression: "(number_of_passengers = 0 AND potential_error = 'zero_pax_count') OR (number_of_passengers > 0 AND potential_error IS NULL)"
 
   - name: fact_items_load
     description: "Items loading fact table. Grain: one row per flight_key + load_id + item_id (product loaded onto aircraft within an order/trolley set)"
@@ -452,9 +456,11 @@ models:
         tests:
           - not_null
       - name: potential_error
-        description: Data quality flag - 'no_pax_data' when passenger count unavailable (new flight without history)
+        description: Data quality flag - 'no_pax_data' when passenger count unavailable (new flight without history), 'zero_pax_count' when number of passengers equals 0
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - flight_key
             - item_id
+      - dbt_utils.expression_is_true:
+          expression: "(number_of_passengers IS NULL AND potential_error = 'no_pax_data') OR (number_of_passengers = 0 AND potential_error = 'zero_pax_count') OR (number_of_passengers > 0 AND potential_error IS NULL)"
