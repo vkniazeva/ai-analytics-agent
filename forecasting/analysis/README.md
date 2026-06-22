@@ -13,7 +13,7 @@ This exploratory data analysis (EDA) investigates fresh food sales patterns on f
 **Mart**: `mart_fresh_food_order_sale`  
 **Grain**: One row per flight-product combination  
 **Period**: 4 months (limited seasonality analysis)  
-**Total Records**: ~59,630 (after cleaning)
+**Total Records**: 59,610 (after cleaning)
 
 **Sample Record:**
 
@@ -56,7 +56,7 @@ and about 10 records were marked as zero_pax_count (potentially a data quality i
 | **item_id**              | str       | 0      | 10            | Product identifier (Fresh Product SKU)                                         |
 | **category**             | str       | 0      | 6             | Product category (Bakery, Sandwiches, etc.)                                    |
 | **price**                | float     | 0      | 7             | Product unit price                                                             |
-| **sold_quantity**        | float     | 0      | 43            | **TARGET**: Number of units sold (0 = no sales)                                |
+| **sold_quantity**        | float     | 0      | 33            | **TARGET**: Number of units sold (0 = no sales)                                |
 | **potential_error**      | str       | 59,610 | 0             | Data quality flag (filtered out for analysis)                                  |
 
 
@@ -82,8 +82,8 @@ and about 10 records were marked as zero_pax_count (potentially a data quality i
 - Includes actual counts and flight-number-based averages
 
 **Target Variable (sold_quantity):**
-- 43 unique values (0 to 61 units)
-- High zero-inflation (~40% zero sales)
+- 33 unique values (0 to 42 units)
+- Severe zero-inflation (~63.5% zero sales)
 - Right-skewed distribution (mean > median)
 
 Conclusion: 
@@ -99,44 +99,44 @@ Therefore, they will systematically lead to the overpredicts zeros and ones.
 
 | Statistic   | sold_quantity | 
 |-------------|---------------|
-| **count**   | 59,620        | 
-| **mean**    | 1.29          | 
-| **std**     | 2.18          | 
+| **count**   | 59,610        | 
+| **mean**    | 0.64          | 
+| **std**     | 1.37          | 
 | **min**     | 0.00          | 
 | **25%**     | 0.00          | 
-| **50%**     | 1.00          | 
-| **75%**     | 2.00          | 
-| **max**     | 61.00         | 
+| **50%**     | 0.00          | 
+| **75%**     | 1.00          | 
+| **max**     | 42.00         | 
 
 
 | Feature                  | Skewness | Kurtosis | Zero Values    |
 |--------------------------|----------|----------|----------------|
-| **sold_quantity**        | 7.10     | 100.74   | 23,624 (39.6%) | 
+| **sold_quantity**        | 6.99     | 104.56   | 37,830 (63.5%) |
 
 
-Zero sales: 23624 (39.6%)
-Non-zero sales: 35996 (60.4%)
+Zero sales: 37,830 (63.5%)
+Non-zero sales: 21,780 (36.5%)
 
 Percentile distribution:
 -  10%: 0.0
 -  25%: 0.0
--  50%: 1.0
--  75%: 2.0
--  90%: 3.0
--  95%: 4.0
--  99%: 10.0
+-  50%: 0.0
+-  75%: 1.0
+-  90%: 2.0
+-  95%: 3.0
+-  99%: 6.0
 
 Distribution Characteristics:
-- High variability: Standard deviation (2.18) is 170% of mean (1.29)
-- Severe right skew (7.10): Long tail of high-value outliers 
-- Extreme kurtosis (100.74): Very sharp peak with extremely heavy tails
-- Zero-inflation: 39.6% of observations have zero sales
-- Outliers right skewed: 1% of observations includes 10–61 units, forming a heavy tail that dominates the outlier structure.
+- High variability: Standard deviation (1.37) is 214% of mean (0.64)
+- Severe right skew (6.99): Long tail of high-value outliers 
+- Extreme kurtosis (104.56): Very sharp peak with extremely heavy tails
+- Severe zero-inflation: 63.5% of observations have zero sales
+- Outliers right skewed: 1% of observations includes 6–42 units, forming a heavy tail that dominates the outlier structure.
 
 Key Statistics:
-- 75% of sales ≤ 2 units (highly concentrated at low values)
-- Maximum of 61 units represents significant outlier
-- Median (1.0) < Mean (1.29) confirms right skew
+- 75% of sales ≤ 1 unit (highly concentrated at zero and low values)
+- Maximum of 42 units represents significant outlier
+- Median (0.0) < Mean (0.64) confirms severe right skew and zero-inflation
 
 ### Target outliers analysis
 
@@ -144,25 +144,25 @@ Key Statistics:
 
 Calculation:
 - Q1 (25th percentile) = 0.00
-- Q3 (75th percentile) = 2.00
-- IQR = Q3 - Q1 = 2.00
-- Lower bound = Q1 - 1.5 × IQR = 0 - 3.0 = -3.0
-- Upper bound = Q3 + 1.5 × IQR = 2 + 3.0 = 5.0
+- Q3 (75th percentile) = 1.00
+- IQR = Q3 - Q1 = 1.00
+- Lower bound = Q1 - 1.5 × IQR = 0 - 1.5 = -1.5
+- Upper bound = Q3 + 1.5 × IQR = 1 + 1.5 = 2.5
 
-**Outlier Range:** Values < -3.0 or > 5.0
+**Outlier Range:** Values < -1.5 or > 2.5
 
 **Results:**
-- Total outliers detected: 1,789 (3.0% of dataset)
-- All outliers are upper outliers (> 5.0 units)
+- Total outliers detected: 3,488 (5,9% of dataset)
+- All outliers are upper outliers (> 2.5 units)
 - No lower outliers (minimum value is 0.00)
 
 ![outliers_box.png](assests/outliers_box.png)
 
 **Box Plot Observations:**
-- Narrow box (Q1=0, Q3=2): 50% of data concentrated in 0-2 unit range
-- Short lower whisker: High concentration at zero
-- Long upper whisker extending to 5.0
-- Numerous points beyond upper bound: Heavy right tail with values up to 61 units
+- Extremely narrow box (Q1=0, Q3=1): 50% of data concentrated in 0-1 unit range
+- No lower whisker: Median at zero reflects severe zero-inflation
+- Short upper whisker extending to 2.5
+- Numerous points beyond upper bound: Heavy right tail with values up to 42 units
 
 ## Numerical features analysis
 
@@ -176,8 +176,8 @@ The year feature was excluded from analysis as it takes only two values whose di
 
 | Statistic   | price     | hour_of_departure | number_of_passengers |
 |-------------|-----------|-------------------|----------------------|
-| **count**   | 59,620    | 59,620            | 59,610               |
-| **mean**    | 16.85     | 13.06             | 154.56               |
+| **count**   | 59,610    | 59,610            | 59,610               |
+| **mean**    | 16.85     | 13.05             | 154.56               |
 | **std**     | 8.18      | 6.44              | 31.11                |
 | **min**     | 7.00      | 0.00              | 13.00                |
 | **25%**     | 7.00      | 9.00              | 145.00               |
@@ -239,9 +239,9 @@ Correlation with sold_quantity:
 
 | Metric               | Correlation |
 |----------------------|-------------|
-| price                | 0.15        |
-| hour_of_departure    | 0.06        |
-| number_of_passengers | 0.002       |
+| price                | 0.12        |
+| hour_of_departure    | 0.07        |
+| number_of_passengers | 0.03        |
 | year                 | -0.02       |
 
 
@@ -277,23 +277,23 @@ The weekend and weekday features provide full coverage of all calendar days as e
 
 | item_id   | avg_qty   | total_qty   | observations  | avg_price   |
 |-----------|-----------|-------------|---------------|-------------|
-| T3L4D007  | 4.45      | 25,471      | 5,729         | 28.0        |
-| C3L2D037  | 1.28      | 7,945       | 6,193         | 7.0         |
-| C3L2D041  | 1.26      | 7,792       | 6,193         | 7.0         |
-| T3L4D129  | 1.16      | 6,647       | 5,729         | 15.0        |
-| C3L2W121  | 1.06      | 6,579       | 6,193         | 17.0        |
-| C3L2D043  | 0.93      | 5,744       | 6,193         | 7.0         |
-| T3L4D008  | 0.93      | 5,323       | 5,729         | 25.0        |
-| T3L4S016  | 0.74      | 4,601       | 6,193         | 15.0        |
-| T3L4D127  | 0.71      | 4,052       | 5,729         | 30.0        |
-| C3L2W161  | 0.44      | 2,498       | 5,729         | 20.0        |
+| T3L4D007  | 2.23      | 12,760      | 5,729         | 28.0        |
+| C3L2D037  | 0.64      | 3,986       | 6,193         | 7.0         |
+| C3L2D041  | 0.63      | 3,904       | 6,193         | 7.0         |
+| T3L4D129  | 0.58      | 3,333       | 5,729         | 15.0        |
+| C3L2W121  | 0.53      | 3,291       | 6,193         | 17.0        |
+| C3L2D043  | 0.46      | 2,878       | 6,193         | 7.0         |
+| T3L4D008  | 0.47      | 2,665       | 5,729         | 25.0        |
+| T3L4S016  | 0.37      | 2,306       | 6,193         | 15.0        |
+| T3L4D127  | 0.35      | 2,028       | 5,729         | 30.0        |
+| C3L2W161  | 0.22      | 1,252       | 5,729         | 20.0        |
 
-`T3L4D007` is the clear sales leader with an average of 4.45 units per observation (including zeros), totalling 25,471 units — nearly 3x the next best item. 
+`T3L4D007` is the clear sales leader with an average of 2.23 units per observation (including zeros), totalling 12,760 units — over 3x the next best item. 
 Notably, this item also carries one of the highest price points (28.0), suggesting that demand is largely price-inelastic for this product. 
-The zero-inclusive average of 4.45 indicates strong and consistent sales volume whenever this item is on board.
+The zero-inclusive average of 2.23 indicates relatively strong sales volume compared to other items, though overall demand has decreased significantly.
 
 In contrast, `C3L2W161`, `T3L4D127`, and `T3L4S016` show low average quantities despite having comparable or higher observation counts, meaning these items are frequently loaded but rarely sold. 
-This pattern is independent of price — the low-performing group includes both budget (7.0) and premium (30.0) items — suggesting that product type rather than price drives demand for these SKUs. 
+This pattern is independent of price — the low-performing group includes both budget (7.0) and expensive (30.0) items — suggesting that product type rather than price drives demand for these SKUs. 
 The distribution of sales across items will be a key signal for the predictive model and warrants item-level feature engineering.
 
 
@@ -301,27 +301,27 @@ The distribution of sales across items will be a key signal for the predictive m
 
 | day_period  | mean  | sum    | count  |
 |-------------|-------|--------|--------|
-| Day         | 1.72  | 28,253 | 16,415 |
-| Evening     | 1.54  | 16,050 | 10,425 |
-| Morning     | 1.04  | 21,449 | 20,585 |
-| Night       | 0.89  | 10,900 | 12,185 |
+| Day         | 1.02  | 16,811 | 16,415 |
+| Evening     | 0.66  | 6,857  | 10,425 |
+| Morning     | 0.47  | 9,647  | 20,585 |
+| Night       | 0.42  | 5,088  | 12,185 |
 
 The day period feature shows a clear relationship with sales performance. 
-Daytime observations record the highest mean sold quantity (1.72), followed by Evening (1.54). 
-Morning observations are the most frequent in the dataset (20,585 records) yet yield a substantially lower mean (1.04) — 
-despite having nearly twice the number of observations as Evening, total morning sales exceed evening sales by only ~34%.
+Daytime observations record the highest mean sold quantity (1.02), followed by Evening (0.66). 
+Morning observations are the most frequent in the dataset (20,585 records) yet yield a substantially lower mean (0.47) — 
+despite having nearly twice the number of observations as Evening, total morning sales exceed evening sales by only ~41%.
 This gap between volume and mean performance suggests that morning flights are structurally weaker in terms of per-observation sales conversion. 
-Night period records the lowest mean (0.89), consistent with reduced passenger appetite during overnight travel.
+Night period records the lowest mean (0.42), consistent with reduced passenger appetite during overnight travel.
 
 
 ### Sales by Weekend
 
 | is_weekend      | mean   | sum    | count   |
 |-----------------|--------|--------|---------|
-| False (weekday) | 1.29   | 53,744 | 41,750  |  
-| True (weekend)  | 1.28   | 22,908 | 17,860  |
+| False (weekday) | 0.64   | 26,912 | 41,750  |  
+| True (weekend)  | 0.64   | 11,491 | 17,860  |
 
-The weekend flag shows virtually no difference in mean sales between weekday (1.29) and weekend (1.28) observations. 
+The weekend flag shows no difference in mean sales between weekday and weekend (both 0.64) observations. 
 Given the absence of any meaningful signal, this feature is unlikely to contribute predictive value and may be excluded from modelling 
 unless interaction effects with other features are identified at a later stage.
 
@@ -338,21 +338,21 @@ cut into four bins reflecting the operational capacity characteristics of the A3
 
 | Bin     | total_sales   | flights_count  | avg_sale_per_flight   | avg_sale_per_pax   |
 |---------|---------------|----------------|-----------------------|--------------------|
-| 0–100   | 4,900         | 4,775          | 1.03                  | 0.0133             |
-| 100–150 | 18,214        | 12,600         | 1.45                  | 0.0111             |
-| 150–180 | 53,185        | 41,930         | 1.27                  | 0.0075             |
-| 180+    | 353           | 305            | 1.16                  | 0.0044             |
+| 0–100   | 1,931         | 4,775          | 0.40                  | 0.0053             |
+| 100–150 | 9,118         | 12,600         | 0.72                  | 0.0056             |
+| 150–180 | 27,153        | 41,930         | 0.65                  | 0.0038             |
+| 180+    | 201           | 305            | 0.66                  | 0.0025             |
 
 Two distinct patterns emerge from the analysis.
-The average sales per passenger decreases monotonically across bins — from 0.0133 in the lowest load segment to 0.0044 for flights above 180 passengers
+The average sales per passenger decreases monotonically across bins — from 0.0053 in the lowest load segment to 0.0025 for flights above 180 passengers
 — suggesting that individual purchase probability declines as cabin occupancy increases, likely due to reduced crew availability 
 per passenger and shorter effective service windows on high-load flights.
 
-Average sales per flight, however, follow a non-monotonic pattern, peaking in the 100–150 passenger range (1.45 units) rather than at maximum capacity. 
+Average sales per flight, however, follow a non-monotonic pattern, peaking in the 100–150 passenger range (0.72 units) rather than at maximum capacity. 
 The 150–180 bin dominates in total volume purely due to flight frequency — it contains the largest share of observations, consistent with typical A320/A321 operating loads.
 
-The scatter plot effect observed in the earlier analysis — an apparent positive relationship up to ~175 passengers followed by a sharp drop — is therefore partly a frequency artifact: 
-high-capacity flights (180+) are rare in this dataset (305 flights), and their low average sales reflect both sparse data and a genuine per-passenger decline. 
+The scatter plot effect observed in the earlier analysis — an apparent relationship up to ~175 passengers followed by relatively stable performance — is partly a frequency artifact: 
+high-capacity flights (180+) are rare in this dataset (305 flights), and their average sales (0.66) reflect both sparse data and a genuine per-passenger decline. 
 The `pax_bin` feature is retained for modelling as each segment exhibits a distinguishable sales profile.
 
 
@@ -362,19 +362,19 @@ The `price` feature was discretized into three bins: Low (≤7), Medium (8–17)
 
 | price_bin   |  mean |  sum   | count  |
 |-------------|-------|--------|--------|
-| Low         | 1.16  | 21,481 | 18,579 |
-| Medium      | 0.98  | 17,827 | 18,115 |
-| High        | 1.63  | 37,344 | 22,916 |
+| Low         | 0.58  | 10,768 | 18,579 |
+| Medium      | 0.49  | 8,930  | 18,115 |
+| High        | 0.81  | 18,643 | 22,916 |
 
-The initial analysis suggested that high-priced items outperform lower price tiers (mean 1.63 vs 1.16). 
+The initial analysis suggested that high-priced items outperform lower price tiers (mean 0.81 vs 0.58). 
 However, this result is driven entirely by a single item `T3L4D007` (price=28.0) which was identified earlier as a strong sales outlier. 
 Excluding this item reveals the opposite pattern:
 
 | price_bin | mean (excl. T3L4D007) |
 |-----------|-----------------------|
-| Low       | 1.16                  |
-| Medium    | 0.98                  |
-| High      | 0.69                  |
+| Low       | 0.58                  |
+| Medium    | 0.49                  |
+| High      | 0.35                  |
 
 For the remaining 9 products, sales decrease monotonically with price — a pattern consistent with standard price elasticity of demand in an onboard retail context. 
 This finding suggests that `price_bin` carries a meaningful signal only in conjunction with `item_id`, 
@@ -389,33 +389,34 @@ Analysis is based on the top 10 routes, origins, and destinations by total sales
 
 | Route                | avg_qty_per_flight  | total_qty   | num_flights   |
 |----------------------|---------------------|-------------|---------------|
-| city_017 -> city_001 | 28.64               | 3,494       | 122           |
-| city_001 -> city_017 | 28.72               | 3,446       | 120           |
-| city_002 -> city_001 | 9.67                | 3,125       | 323           |
-| city_001 -> city_002 | 9.65                | 3,125       | 324           |
-| city_001 -> city_003 | 25.14               | 3,042       | 121           |
-| city_003 -> city_001 | 24.97               | 3,021       | 121           |
-| city_008 -> city_001 | 10.25               | 2,861       | 279           |
-| city_001 -> city_008 | 10.28               | 2,836       | 276           |
-| city_001 -> city_013 | 26.65               | 2,372       | 89            |
-| city_013 -> city_001 | 26.46               | 2,355       | 89            |
+| city_001 -> city_002 | 6.12                | 1,984       | 324           |
+| city_001 -> city_008 | 6.80                | 1,878       | 276           |
+| city_017 -> city_001 | 15.12               | 1,845       | 122           |
+| city_003 -> city_001 | 13.22               | 1,600       | 121           |
+| city_001 -> city_017 | 13.30               | 1,596       | 120           |
+| city_001 -> city_003 | 11.78               | 1,425       | 121           |
+| city_001 -> city_011 | 4.75                | 1,419       | 299           |
+| city_001 -> city_005 | 11.25               | 1,328       | 118           |
+| city_001 -> city_018 | 15.33               | 1,318       | 86            |
+| city_020 -> city_001 | 10.72               | 1,233       | 115           |
 
 Route-level analysis reveals considerable variation in both total and average sales across directions.  
-The `city_017 <-> city_001` corridor records the highest average sales per flight (~28.7 units) with symmetric volume in both directions, 
-suggesting a consistently high-demand route. Similarly, `city_003 <-> city_001` and `city_013 <-> city_001` show high per-flight averages (25+ units), 
-though the latter operates with the fewest flights among the top 10 — its historical performance warrants further investigation to determine how recently this route was introduced.
+The `city_017 <-> city_001` corridor records high average sales per flight (~14.2 units), with city_001 -> city_018 showing the highest per-flight average (15.33) among top routes. 
+The `city_003 <-> city_001` corridor also shows relatively strong performance (11.78-13.22 units per flight).
 
-In contrast, `city_002 <-> city_001` is the most frequently operated route in the dataset yet records the lowest average sales per flight (~9.7 units), 
-suggesting a high proportion of zero-sale observations for this direction. 
-The `city_008 <-> city_001` corridor shows a similar pattern with moderate frequency and low per-flight average.
+The `city_001 -> city_002` and `city_001 -> city_008` routes dominate in total volume due to high flight frequency (324 and 276 flights respectively), 
+but record lower per-flight averages (6.12 and 6.80 units), suggesting these high-frequency routes have lower conversion rates. 
+The `city_001 -> city_011` route shows the lowest per-flight average (4.75 units) among top routes.
 
-All top routes appear as symmetric pairs (outbound and return), with near-identical sales figures in both directions — consistent with catering being loaded at the hub airport `city_001` for both segments.
+Route symmetry (outbound and return pairs) is less pronounced in the current dataset, with some variation between directions — 
+for example, city_017 -> city_001 (15.12) vs city_001 -> city_017 (13.30), though both remain in similar performance bands.
 
 #### Top Origins and Destinations
 
-Origins and destinations show symmetric patterns, which is expected given the hub-and-spoke structure centered on `city_001`. 
-This city dominates both origin and destination rankings by total volume (38,365 and 38,369 units respectively) due to its role as the primary catering hub. 
-Among non-hub cities, `city_017`, `city_003`, and `city_013` lead in average sales per flight, while `city_002` again shows high total volume but low per-flight average — consistent with the route-level findings above.
+Origins and destinations show patterns consistent with the hub-and-spoke structure centered on `city_001`. 
+This city dominates in total volume (22,641 units from origin, 15,827 units to destination) due to its role as the primary hub. 
+Among non-hub cities, `city_017` (15.12 avg from origin, 13.30 avg to destination), `city_003`, and `city_018` lead in average sales per flight, 
+while `city_002` and `city_011` show high total volume but low per-flight averages — consistent with the route-level findings above.
 
 > **Note on dataset structure:** The current dataset is aggregated at the individual flight level. 
 > If model performance is insufficient, an alternative aggregation at the route level (combining outbound and return segments as a single catering line) may be considered, 
@@ -438,11 +439,12 @@ and temporal features show no meaningful predictive signal and are candidates fo
 
 Key findings that directly shape the modelling approach:
 
-- The target variable is zero-inflated (~40% zeros) with extreme right skew, ruling out standard regression approaches and MSE-based optimization
-- `T3L4D007` is a structural outlier that disproportionately influences price-level aggregations — item identity must be treated as a primary feature rather than a proxy
+- The target variable shows severe zero-inflation (63.5% zeros) with extreme right skew, ruling out standard regression approaches and MSE-based optimization
+- `T3L4D007` remains a structural outlier that disproportionately influences price-level aggregations — item identity must be treated as a primary feature rather than a proxy
 - Passenger load exhibits a non-linear threshold effect with an optimal sales conversion window of 100–150 passengers, motivating the use of `pax_bin` over the raw continuous feature
-- Route-level variation is substantial and symmetric across outbound/return pairs, consistent with hub-based catering operations — route identity carries strong predictive signal
+- Route-level variation is substantial with notable directional asymmetries, particularly for hub routes — route identity carries strong predictive signal
 - Price elasticity is product-dependent and cannot be interpreted independently of `item_id`
+- Overall sales levels are significantly lower than historical patterns, with mean sales at 0.64 units per observation vs previous periods
 
 Based on these characteristics, the modelling stage will evaluate the following approaches: 
 a historical mean baseline aggregated at flight-product level, KNN, Random Forest, Poisson regression, and a two-stage classifier-regressor pipeline. 
