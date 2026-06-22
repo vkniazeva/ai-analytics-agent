@@ -63,12 +63,12 @@ left join avg_pax_by_flight_number avg_pax
 
 left join (
     select
-        load_id,
+        flight_key,
         product_key,
         count(slip_id) as tickets_count,
         sum(sold_quantity) as sold_quantity
     from {{ ref('fact_sales') }}
-    group by load_id, product_key
+    group by flight_key, product_key
 ) s
-    on s.load_id = bfl.load_id
+    on s.flight_key = bfl.flight_key
         and s.product_key = fil.product_key
