@@ -374,7 +374,7 @@ Excluding this item reveals the opposite pattern:
 |-----------|-----------------------|
 | Low       | 0.58                  |
 | Medium    | 0.49                  |
-| High      | 0.35                  |
+| High      | 0.32                  |
 
 For the remaining 9 products, sales decrease monotonically with price — a pattern consistent with standard price elasticity of demand in an onboard retail context. 
 This finding suggests that `price_bin` carries a meaningful signal only in conjunction with `item_id`, 
