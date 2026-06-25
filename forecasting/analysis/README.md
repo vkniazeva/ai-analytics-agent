@@ -449,3 +449,90 @@ Key findings that directly shape the modelling approach:
 Based on these characteristics, the modelling stage will evaluate the following approaches: 
 a historical mean baseline aggregated at flight-product level, KNN, Random Forest, Poisson regression, and a two-stage classifier-regressor pipeline. 
 If flight-level granularity proves insufficient, dataset re-aggregation at the route level will be considered as an alternative modelling unit.
+
+---
+
+## Feature Engineering – Historical Averages with Cross-Validation
+
+### Blocked Cross-Validation Strategy
+
+**Approach:** Expanding window with 14-day validation blocks
+
+**Logic:**
+- Start with first 14 days (Nov 1–14) as initial training set  
+- Validate on next 14 days (Nov 15–28)  
+- Each subsequent fold expands the training window to include all previous data  
+- Validation window slides forward by 14 days  
+- Creates 8 folds covering the full 4-month period  
+
+**Example:**
+```
+Fold 1: Train [Nov 1–14]     → Validate [Nov 15–28]
+Fold 2: Train [Nov 1–28]     → Validate [Nov 29 – Dec 12]
+Fold 3: Train [Nov 1 – Dec 12] → Validate [Dec 13–26]
+...
+Fold 8: Train [Nov 1 – Feb 20] → Validate [Feb 21–28]
+```
+
+**Benefits:**
+- Expanding window uses all available historical data  
+- Each validation period is independent (no overlap)  
+- Mimics real-world scenario where training data grows over time
+
+
+### Feature Engineering: Hierarchical Historical Averages
+
+**Objective:** Create a feature that predicts sales based on historical patterns, computed separately for each CV fold to prevent data leakage.
+
+#### Hierarchical Aggregation Levels
+
+To handle sparse data (63.5% zeros), we use a **3-level fallback hierarchy** from most specific to most general:
+
+**Level 1:** `item_id × route × day_period`  
+- Most granular: captures route‑specific and time‑of‑day patterns  
+- Example: `T3L4D007 on city_001→city_017 during Morning`  
+- Coverage: ~95% of records have ≥3 training samples  
+- Used for: 94% of predictions in later folds  
+
+**Level 2:** `item_id × route × is_night`  
+- Fallback when Level 1 has insufficient data  
+- Less granular but better coverage  
+- Example: `T3L4D007 on city_001→city_017 during night hours`  
+- Used for: ~3% of predictions  
+
+**Level 3:** `item_id × day_period`  
+- Broadest fallback, removes route specificity  
+- Example: `T3L4D007 during Morning` (any route)  
+- Coverage: 100% (all combinations have ≥10 samples)  
+- Used for: ~3% of predictions (new routes, rare combinations)
+
+**Minimum Sample Threshold:** 3 records required at each level before using that average.
+
+#### Coverage Results
+
+All 8 folds achieved **100% coverage**:
+
+| Fold | Coverage | Level 1 Usage     | Level 2 Usage | Level 3 Usage |
+|------|----------|-------------------|---------------|---------------|
+| 1    | 100.00%  | 6,545 (94.9%)     | 215 (3.1%)    | 140 (2.0%)    |
+| 2    | 100.00%  | 7,030 (98.9%)     | 60 (0.8%)     | 20 (0.3%)     |
+| 3–8  | 100.00%  | 95–99%            | 0.5–1.5%      | 0–1%          |
+
+**Key Observations:**
+- Early folds (1–2) rely more on Level 3 due to limited training data  
+- As training data grows, Level 1 coverage improves to 95–99%  
+- By Fold 8, nearly all predictions use the most specific aggregation level
+
+### Feature Quality Analysis
+
+![Feature Coverage by Fold](assests/feature_quality_analysis.png)
+
+**Coverage Stability:**  
+All folds maintain 100% feature availability, ensuring no prediction failures.
+
+**Level Distribution:**  
+The stacked bar chart shows hierarchical feature usage evolves as training data accumulates—early folds use more fallback levels, while later folds predominantly use Level 1 (most specific).
+
+**Hierarchy Effectiveness:**  
+The total usage chart confirms Level 1 handles the vast majority of predictions (51,900 records), with Level 2 (615) and Level 3 (315) serving as essential fallbacks for edge cases.
+
