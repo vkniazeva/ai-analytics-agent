@@ -536,3 +536,79 @@ The stacked bar chart shows hierarchical feature usage evolves as training data 
 **Hierarchy Effectiveness:**  
 The total usage chart confirms Level 1 handles the vast majority of predictions (51,900 records), with Level 2 (615) and Level 3 (315) serving as essential fallbacks for edge cases.
 
+## Modeling Results – CatBoost Two-Stage Approach
+
+### Model Architecture
+
+Given the severe zero-inflation (63.5% zeros) in the target variable, a **two-stage pipeline** was implemented:
+
+**Stage 1: Classification**  
+- Model: CatBoostClassifier  
+- Task: Predict whether sales will occur (zero vs non-zero)  
+- Metric: F1-score  
+
+**Stage 2: Regression**  
+- Model: CatBoostRegressor  
+- Task: Predict quantity for non-zero cases  
+- Metric: MAE (Mean Absolute Error)  
+- Training: Only on records with actual sales (non-zero subset)
+
+**Final Prediction:**  
+- If classifier predicts zero → predict 0 units  
+- If classifier predicts non-zero → use regression prediction (rounded and clipped to ≥0)
+
+### Feature Set
+
+**Categorical:** `item_id`, `route`, `day_period`, `pax_bin`  
+**Numerical:** `hist_avg` (historical average sales from feature engineering)
+
+### Performance Results
+
+**Baseline (Historical Average Only):**
+- MAE: 0.476  
+- Exact match: 63.0%  
+- Wasted food: 1,441 cases (21.2%)  
+- Missed sales: 1,068 cases (15.7%)
+
+**CatBoost Two-Stage (Threshold = 0.7):**
+- **MAE: 0.45** (5% improvement over baseline)  
+- **Exact match: 70.2%**  
+- **Wasted food: 473 cases (7.0%)** — 67% reduction vs baseline  
+- **Missed sales: 1,553 cases (22.9%)** — trade-off for lower waste
+
+### Feature Importance
+
+**Classification Model (Zero Detection):**
+1. `hist_avg` (historical average) — dominant predictor  
+2. `item_id` — strong product-specific zero patterns  
+3. `route` — route-level demand variability  
+4. `day_period`, `pax_bin` — minor contributors
+
+**Regression Model (Quantity Prediction):**
+1. `hist_avg` — primary signal  
+2. `item_id` — product-specific quantity patterns  
+3. `route` — route demand intensity  
+4. `pax_bin`, `day_period` — secondary factors
+
+### Business Impact Analysis
+
+The model achieves strong **zero-prediction accuracy** (95.5% of zeros correctly identified), minimizing unnecessary loading and waste. However, it **misses 75% of actual sales opportunities** (conservative prediction strategy).
+
+**Trade-off:**  
+- Higher threshold (0.7) → fewer false positives → less waste but more missed sales  
+- Lower threshold (0.3) → more false positives → more waste but fewer missed sales
+
+**Optimal threshold (0.7) prioritizes waste reduction:**
+- Total wasted food: 473 units (vs 1,441 baseline)  
+- Total missed sales: 1,553 units (vs 1,068 baseline)  
+- Net benefit depends on relative cost of waste vs lost revenue
+
+### Key Findings
+
+1. **Historical average is the strongest predictor** — feature engineering delivered the most valuable signal  
+2. **Item identity dominates** — product-level heterogeneity drives most of the predictable variance  
+3. **Route effects are significant** — location-specific demand patterns matter  
+4. **Zero-inflation handling is critical** — two-stage approach outperforms single-stage regression  
+5. **Conservative predictions reduce waste** — but at the cost of missed sales opportunities
+
+
