@@ -18,5 +18,15 @@ data/config/cities_mapping.json
 analytics_dbt/seeds/cities_mapping.csv
 analytics_dbt/seeds/currency_mapping.csv
 
+# Jupyter notebooks
+*_files/
+interim_for_notebooks/
+
+# Model artifacts
+catboost_info/
+
+# Logs
+logs/dbt.log
+
 # OS
 .DS_Store

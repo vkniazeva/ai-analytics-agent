@@ -7,3 +7,10 @@ feature_engineering:
     # Minimum number of samples required at each hierarchical level
     # to use that level's average (otherwise fall back to next level)
     min_samples: 5
+
+# Data Preparation -> Data Ingestion
+data_preparation:
+  data_ingestion:
+    # Data source type: 'mock' for testing, 'database' for production
+    # Options: mock | database
+    data_source: mock
