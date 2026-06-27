@@ -14,3 +14,14 @@ data_preparation:
     # Data source type: 'mock' for testing, 'database' for production
     # Options: mock | database
     data_source: mock
+  feature_engineering:
+    pax_bins: [100, 150, 180]
+    min_samples: 5
+  data_validation:
+    required_columns: ["flight_key", "origin", "destination", "date", "item_id", "sold_quantity", "number_of_passengers", "is_night"]
+    target: sold_quantity
+    hist_avg_levels: 4
+    start_date: "2025-11-01"
+    end_date: "2026-02-28"
+
+
