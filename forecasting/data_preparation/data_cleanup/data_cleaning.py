@@ -20,7 +20,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Dropping fully empty columns and rows with any NaN
     df = df.dropna(axis=1, how="all")
-    df = df.dropna(axis=0)
+    df = df.dropna(axis=0, how="all")
 
     print(f"Dataset shape after cleanup: {df.shape}")
     return df

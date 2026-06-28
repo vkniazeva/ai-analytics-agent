@@ -6,23 +6,9 @@ from forecasting.utils.config_handler import return_config
 
 def _create_pax_bins(df: pd.DataFrame, pax_bins_config: list) -> pd.DataFrame:
 
-    # creating bins
-    min_value = df["number_of_passengers"].min()
-    max_value = df["number_of_passengers"].max()
-    all_bins = []
-    all_bins.append(int(min_value))
-    all_bins.extend(pax_bins_config)
-    all_bins.append(int(max_value))
-
-    # creating labels
-    labels = []
-    for i in range(len(all_bins) - 1):
-        bin_name = str(all_bins[i]) + " - " + str(all_bins[i + 1])
-        labels.append(bin_name)
-
     df["pax_bins"] = pd.cut(df["number_of_passengers"],
-                            bins=all_bins,
-                            labels=labels, include_lowest=True)
+                            bins=pax_bins_config,
+                            labels=["<100", "100 - 150", "150 - 180", "180 +"], include_lowest=True)
     return df
 
 
@@ -83,7 +69,8 @@ def _create_hist_avg(df: pd.DataFrame, min_samples: int) -> pd.DataFrame:
     df.loc[mask_l3, "hist_avg"] = df.loc[mask_l3, "hist_avg_l3"]
     df.loc[mask_l3, "hist_level_used"] = 3
 
-    mask_l4 = df["hist_avg"].isna() & (df["hist_count_l4"] >= min_samples)
+    # last level doesn't have any limitations as it is a fallback
+    mask_l4 = df["hist_avg"].isna() & (df["hist_count_l4"] >= 0)
     df.loc[mask_l4, "hist_avg"] = df.loc[mask_l4, "hist_avg_l4"]
     df.loc[mask_l4, "hist_level_used"] = 4
 
@@ -92,6 +79,7 @@ def _create_hist_avg(df: pd.DataFrame, min_samples: int) -> pd.DataFrame:
     return df
 
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     config = return_config()
     features_config = config["data_preparation"]["feature_engineering"]
     df = _create_pax_bins(df, features_config["pax_bins"])

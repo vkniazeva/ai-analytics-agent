@@ -24,6 +24,7 @@ interim_for_notebooks/
 
 # Model artifacts
 catboost_info/
+forecasting/model_registry/
 
 # Logs
 logs/dbt.log

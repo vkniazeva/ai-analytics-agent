@@ -8,20 +8,48 @@ feature_engineering:
     # to use that level's average (otherwise fall back to next level)
     min_samples: 5
 
-# Data Preparation -> Data Ingestion
+# Data Preparation
 data_preparation:
   data_ingestion:
     # Data source type: 'mock' for testing, 'database' for production
     # Options: mock | database
     data_source: mock
   feature_engineering:
-    pax_bins: [100, 150, 180]
+    # Inner boundaries for the passenger count feature. Min and max values are set directly in code via (min() and max())
+    pax_bins: [0, 100, 150, 180, 1000]
+    # Minimal number of samples for the historical average calculation
     min_samples: 5
   data_validation:
+    # Minimal set of required columns
     required_columns: ["flight_key", "origin", "destination", "date", "item_id", "sold_quantity", "number_of_passengers", "is_night"]
+    # Models target
     target: sold_quantity
+    # Number of historical averages levels (based on their specificity)
     hist_avg_levels: 4
+    # Dataset start and end dates
     start_date: "2025-11-01"
     end_date: "2026-02-28"
+
+# Model configs (only CatBoost)
+model:
+  test_split_by_weeks: 2
+  model_features:
+    numerical: ["hist_avg"]
+    categorical: ["item_id", "route", "day_period", "pax_bin"]
+    target: "sold_quantity"
+  catboost:
+    # threshold value for the model
+    low_missed_sales: 0.4
+    low_wastage: 0.7
+    classifier:
+      iterations: 500
+      learning_rate: 0.05
+      depth: 6
+      random_seed: 42
+    regressor:
+      iterations: 500
+      learning_rate: 0.05
+      depth: 6
+      random_seed: 42
 
 
