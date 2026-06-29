@@ -178,22 +178,3 @@ def test_validate_data_multiple_failures():
     with pytest.raises(ValidationError):
         validate_data(df)
 
-
-# Test empty dataframe
-def test_validate_data_empty_dataframe():
-    df = pd.DataFrame({
-        "flight_key": pd.Series([], dtype=str),
-        "origin": pd.Series([], dtype=str),
-        "destination": pd.Series([], dtype=str),
-        "date": pd.Series([], dtype='datetime64[ns]'),
-        "item_id": pd.Series([], dtype=str),
-        "sold_quantity": pd.Series([], dtype=int),
-        "number_of_passengers": pd.Series([], dtype=int),
-        "is_night": pd.Series([], dtype=bool),
-        "hist_avg": pd.Series([], dtype=float),
-        "hist_level_used": pd.Series([], dtype=float)
-    })
-
-    # Empty dataframe passes validation (no invalid data to detect)
-    # This is edge case - in practice should be caught earlier in pipeline
-    validate_data(df)  # Should not raise

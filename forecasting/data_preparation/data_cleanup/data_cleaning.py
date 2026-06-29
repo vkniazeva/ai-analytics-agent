@@ -1,5 +1,8 @@
 import pandas as pd
 
+from forecasting.utils.exceptions import ValidationError
+
+
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     print(f"Dataset shape before cleanup: {df.shape}")
@@ -21,6 +24,9 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     # Dropping fully empty columns and rows with any NaN
     df = df.dropna(axis=1, how="all")
     df = df.dropna(axis=0, how="all")
+
+    if df.empty:
+        raise ValidationError("Dataset is empty after cleaning")
 
     print(f"Dataset shape after cleanup: {df.shape}")
     return df
