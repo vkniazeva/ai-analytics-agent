@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from forecasting.utils.config_handler import return_config
+from forecasting.utils.database import write_sql
 
 
 def _create_pax_bins(df: pd.DataFrame, pax_bins_config: list) -> pd.DataFrame:
@@ -78,6 +79,12 @@ def _create_hist_avg(df: pd.DataFrame, min_samples: int) -> pd.DataFrame:
     df = df.drop(cols_to_drop, axis=1)
     return df
 
+def save_hist_avg_lookup(df: pd.DataFrame) -> None:
+    lookup = df[["item_id", "route", "day_period", "is_night", "hist_avg", "hist_level_used"]]
+    lookup = lookup.drop_duplicates(subset=["item_id", "route", "day_period", "is_night"])
+    table_name = "lookup_hist_avg"
+    write_sql(lookup, table_name)
+
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     config = return_config()
@@ -85,4 +92,6 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     df = _create_pax_bins(df, features_config["pax_bins"])
     df = _create_route(df)
     df = _create_hist_avg(df, features_config["min_samples"])
+    # save hist_avg lookup for inference
+    save_hist_avg_lookup(df)
     return df

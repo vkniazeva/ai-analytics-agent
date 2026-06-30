@@ -125,6 +125,7 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
     business_metrics = _evaluate_business_metrics(reg_results_df)
     business_metrics_by_item = _evaluate_business_metrics_by_item(reg_results_df, item_ids)
 
+
     # degradation check
     versions_table_name = "model_runs"
     _check_degradation(accuracy, degradation_threshold, versions_table_name)
@@ -154,6 +155,19 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
         {"run_id": run_id, "model_type": "regressor", "metric_name": "lost_sale_share", "metric_value": business_metrics["lost_sale_share"]},
     ]
     write_sql(pd.DataFrame(metrics), "model_metrics")
+
+    # features importance
+    cls_importance = classifier.get_feature_importance()
+    reg_importance = regressor.get_feature_importance()
+    feature_names = classifier.feature_names_
+
+    feature_df = pd.DataFrame({
+        "feature_name": feature_names,
+        "classifier_importance" : cls_importance,
+        "regressor_importance": reg_importance})
+    feature_df["run_id"] = run_id
+
+    write_sql(feature_df, "feature_importance")
 
     business_metrics_by_item["run_id"] = run_id
     write_sql(business_metrics_by_item, "model_metrics_by_item")
