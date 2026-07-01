@@ -1,5 +1,6 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
 
+from forecasting.model.model_registry.handle_model import save_model
 from forecasting.utils.config_handler import return_config
 import pandas as pd
 
@@ -10,19 +11,19 @@ def _prepare_dataset(df: pd.DataFrame, feature_list: list, target: str) -> pd.Da
     return df[feature_list]
 
 
-def _split_train_test_set(df: pd.DataFrame, config_set_split: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _split_train_test_set(df: pd.DataFrame, config_set_split: str) -> pd.DataFrame:
     df = df.sort_values(by="date", ascending=True)
     test_set_cutoff = df["date"].max() - pd.Timedelta(weeks=int(config_set_split))
     train_df: pd.DataFrame = df[df["date"] <= test_set_cutoff]
     test_df: pd.DataFrame = df[df["date"] > test_set_cutoff]
     print(f"Train DF size: {train_df.shape}")
     print(f"Test DF size: {test_df.shape}")
-    return train_df, test_df
+    return train_df
 
 
 def _train_classifier(train_df: pd.DataFrame, classifier_config: dict,
                       features: list, target: str,
-                      cat_features: list) -> tuple:
+                      cat_features: list) -> CatBoostClassifier:
     X_train = train_df[features]
     y_train_cls = (train_df[target] > 0).astype(int)
 
@@ -37,9 +38,8 @@ def _train_classifier(train_df: pd.DataFrame, classifier_config: dict,
     )
 
     classifier.fit(X_train, y_train_cls)
-    cls_proba = classifier.predict_proba(X_train)[:, 1]
 
-    return classifier, cls_proba
+    return classifier
 
 
 def _train_regression(train_df: pd.DataFrame, regressor_config: dict,
@@ -63,10 +63,13 @@ def _train_regression(train_df: pd.DataFrame, regressor_config: dict,
     return regressor
 
 
-
-def train_model(df: pd.DataFrame, threshold_type: str) -> None:
+def train_model(df: pd.DataFrame) -> tuple:
     df = df.copy()
     config = return_config()
+
+    # splitting DataFrame to test and train
+    config_set_split = config["model"]["test_split_by_weeks"]
+    train_df = _split_train_test_set(df, config_set_split)
 
     # leaving only needed columns
     categorical_features = config["model"]["model_features"]["categorical"]
@@ -76,15 +79,15 @@ def train_model(df: pd.DataFrame, threshold_type: str) -> None:
 
     df = _prepare_dataset(df, all_features, target)
 
-    # splitting DataFrame to test and train
-    config_set_split = config["model"]["test_split_by_weeks"]
-    train_df, test_df = _split_train_test_set(df, config_set_split)
-
     # training classifier
-    threshold = config["model"]["catboost"][threshold_type]
     config_classifier = config["model"]["catboost"]["classifier"]
-    classifier, cls_proba = _train_classifier(train_df, config_classifier, all_features, target, categorical_features)
+    classifier = _train_classifier(train_df, config_classifier, all_features, target, categorical_features)
 
     # training regression
     config_regressor = config["model"]["catboost"]["regressor"]
     regressor = _train_regression(train_df, config_regressor, all_features, target, categorical_features)
+
+    # saving model
+    latest_version = save_model(classifier, regressor)
+
+    return classifier, regressor, latest_version

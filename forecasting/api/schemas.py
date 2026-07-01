@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from enum import Enum
 
@@ -27,7 +29,7 @@ class PredictItemResponse(BaseModel):
     threshold_value: float
     predicted_quantity: int
     historical_average: float
-    estimated_accuracy: float
+    estimated_accuracy: Optional[float] = None
 
 class PredictCategoriesResponse(BaseModel):
     category_name: str

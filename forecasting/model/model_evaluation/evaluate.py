@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, mean_absolute_error
 from catboost import CatBoostClassifier, CatBoostRegressor
 
@@ -29,11 +30,18 @@ def _evaluate_classifier(X_test: pd.DataFrame, y_test_cls: pd.Series,
     return precision, recall, f1, accuracy
 
 
-def _evaluate_regressor(X_test: pd.DataFrame, y_test: pd.Series,
-                         regressor: CatBoostRegressor) -> tuple[pd.DataFrame, float]:
+def _evaluate_regressor(X_test: pd.DataFrame, y_test: pd.Series, classifier: CatBoostClassifier,
+                         regressor: CatBoostRegressor, threshold: float) -> tuple[pd.DataFrame, float]:
+    # Round and clip predictions (sold_quantity must be non-negative integer)
+    cls_proba = classifier.predict_proba(X_test)[:, 1]
+    cls_pred = (cls_proba >= threshold).astype(int)
+
+    reg_pred = regressor.predict(X_test).round().clip(0).astype(int)
+    final_pred = np.where(cls_pred == 0, 0, reg_pred)
+
     results_df = pd.DataFrame({
         "fact": y_test.values,
-        "predicted": regressor.predict(X_test)
+        "predicted": final_pred
     })
     mae = mean_absolute_error(results_df["fact"], results_df["predicted"])
     return results_df, mae
@@ -119,7 +127,7 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
     precision, recall, f1, accuracy = _evaluate_classifier(X_test, y_test_cls, classifier, threshold)
 
     # regressor
-    reg_results_df, mae = _evaluate_regressor(X_test, y_test, regressor)
+    reg_results_df, mae = _evaluate_regressor(X_test, y_test, classifier, regressor, threshold)
 
     # business metrics
     business_metrics = _evaluate_business_metrics(reg_results_df)

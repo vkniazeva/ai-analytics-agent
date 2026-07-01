@@ -1,4 +1,4 @@
-.PHONY: help install start load dbt test metadata-sync run forecast pipeline
+.PHONY: help install start init-db load dbt test metadata-sync run forecast pipeline
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -8,6 +8,13 @@ install: ## Install dependencies (activate your venv first)
 
 start: ## Start PostgreSQL
 	docker-compose up -d postgres
+	@echo "Waiting for PostgreSQL to be ready..."
+	@sleep 3
+
+init-db: ## Initialize database tables from scripts/create_tables.sql
+	@echo "Creating database tables..."
+	@docker-compose exec -T postgres bash -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB' < scripts/create_tables.sql
+	@echo "Database tables created successfully"
 
 load: ## Load raw data into PostgreSQL
 	python -m ingestion.load_raw
@@ -21,11 +28,14 @@ test: ## Run dbt tests only
 metadata-sync: ## Sync metadata from dbt to database
 	python -m metadata.metadata_sync
 
-run: start load dbt metadata-sync ## Full pipeline: start db, load data, run dbt, sync metadata
+run: start init-db load dbt metadata-sync ## Full pipeline: start db, load data, run dbt, sync metadata
 
 forecast: ## Run forecasting (uses data_source from config.yaml: mock or database)
-	python -m forecasting.run
+	~/.virtualenvs/ai-analytics-agent/bin/python -m forecasting.run
 
-pipeline: start load dbt metadata-sync ## Complete pipeline: analytics + forecasting
+pipeline: start init-db load dbt metadata-sync ## Complete pipeline: analytics + forecasting
 	@echo "Ensure config.yaml has data_source: database for production pipeline"
-	python -m forecasting.run
+	~/.virtualenvs/ai-analytics-agent/bin/python -m forecasting.run
+
+forecasting.api:
+	uvicorn forecasting.api.app:app --reload

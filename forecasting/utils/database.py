@@ -21,7 +21,7 @@ def get_engine():
 
 def read_sql(query: str, table_name: str = None) -> pd.DataFrame:
     config = return_config()
-    if config["data_source"] == "mock":
+    if config["data_preparation"]["data_ingestion"]["data_source"] == "mock":
         path = FORECASTING_PATH / "interim_files" / f"{table_name}.csv"
         return pd.read_csv(path)
     else:
@@ -29,7 +29,7 @@ def read_sql(query: str, table_name: str = None) -> pd.DataFrame:
 
 def write_sql(df: pd.DataFrame, table_name: str, schema: str = "forecasting") -> None:
     config = return_config()
-    if config["data_source"] == "mock":
+    if config["data_preparation"]["data_ingestion"]["data_source"] == "mock":
         path = FORECASTING_PATH / "interim_files" / f"{table_name}.csv"
         df.to_csv(path)
     else:

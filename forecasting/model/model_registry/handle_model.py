@@ -16,7 +16,7 @@ def _write_versions(versions: dict) -> None:
     with open(VERSIONS_FILE, "w") as f:
         json.dump(versions, f, indent=2)
 
-def save_model(classifier: CatBoostClassifier, regressor: CatBoostRegressor) -> None:
+def save_model(classifier: CatBoostClassifier, regressor: CatBoostRegressor) -> str:
     import shutil
     versions = _read_versions()
     versions_list = versions["versions"]
@@ -42,6 +42,8 @@ def save_model(classifier: CatBoostClassifier, regressor: CatBoostRegressor) -> 
     regressor.save_model(str(version_path / "regressor.cbm"))
 
     _write_versions({"latest": latest_version, "versions": versions_list})
+
+    return latest_version
 
 
 def load_model() -> tuple[CatBoostClassifier, CatBoostRegressor]:

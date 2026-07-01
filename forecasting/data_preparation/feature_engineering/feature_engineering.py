@@ -7,7 +7,7 @@ from forecasting.utils.database import write_sql
 
 def _create_pax_bins(df: pd.DataFrame, pax_bins_config: list) -> pd.DataFrame:
 
-    df["pax_bins"] = pd.cut(df["number_of_passengers"],
+    df["pax_bin"] = pd.cut(df["number_of_passengers"],
                             bins=pax_bins_config,
                             labels=["<100", "100 - 150", "150 - 180", "180 +"], include_lowest=True)
     return df
@@ -76,6 +76,7 @@ def _create_hist_avg(df: pd.DataFrame, min_samples: int) -> pd.DataFrame:
     df.loc[mask_l4, "hist_level_used"] = 4
 
     cols_to_drop = [c for c in df.columns if c.startswith("hist_avg_l") or c.startswith("hist_count_l")]
+    df["hist_avg"] = df["hist_avg"].round(2)
     df = df.drop(cols_to_drop, axis=1)
     return df
 

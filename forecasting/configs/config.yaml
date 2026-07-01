@@ -1,5 +1,6 @@
 # Forecasting Configuration
 
+
 # Feature Engineering
 feature_engineering:
   # Historical Average Configuration
@@ -13,7 +14,7 @@ data_preparation:
   data_ingestion:
     # Data source type: 'mock' for testing, 'database' for production
     # Options: mock | database
-    data_source: mock
+    data_source: database
   feature_engineering:
     # Inner boundaries for the passenger count feature. Min and max values are set directly in code via (min() and max())
     pax_bins: [0, 100, 150, 180, 1000]
@@ -32,6 +33,7 @@ data_preparation:
 
 # Model configs (only CatBoost)
 model:
+  degradation_threshold: 0.1
   test_split_by_weeks: 2
   model_features:
     numerical: ["hist_avg"]

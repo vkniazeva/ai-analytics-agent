@@ -36,12 +36,12 @@ def _map_bins(pax: int) -> str:
 
 
 def _load_fresh_products() -> pd.DataFrame:
-    query = "SELECT item_id, category FROM dim_products WHERE item_type = 'Fresh Product' AND category != 'BOL Products' AND status = 'Active'"
+    query = "SELECT item_id, category FROM mart.dim_products WHERE item_type = 'Fresh Product' AND category != 'BOL Products' AND status = 'Active'"
     return read_sql(query, "dim_products") if data_source == "mock" else read_sql(query)
 
 
 def _load_hist_avg() -> pd.DataFrame:
-    query = "SELECT * FROM lookup_hist_avg"
+    query = "SELECT * FROM forecasting.lookup_hist_avg"
     return read_sql(query, "lookup_hist_avg") if data_source == "mock" else read_sql(query)
 
 
@@ -89,7 +89,7 @@ def _process_regression(items_df: pd.DataFrame, regressor: CatBoostRegressor,
 
 def _get_estimated_accuracy(item_id: str) -> float:
     query = f"""
-        SELECT mi.accurate / NULLIF(mi.accurate + mi.waste + mi.lost_sale, 0) as estimated_accuracy
+        SELECT mi.accurate::float / NULLIF(mi.accurate + mi.waste + mi.lost_sale, 0) as estimated_accuracy
         FROM forecasting.model_metrics_by_item mi
         JOIN forecasting.model_runs mr ON mi.run_id = mr.run_id
         WHERE mi.item_id = '{item_id}'
@@ -97,7 +97,7 @@ def _get_estimated_accuracy(item_id: str) -> float:
         LIMIT 1
     """
     result = read_sql(query, "model_metrics_by_item")
-    return float(result["estimated_accuracy"].iloc[0]) if len(result) > 0 else 0.0
+    return float(result["estimated_accuracy"].iloc[0]) if len(result) > 0 else None
 
 
 # --- endpoints ---

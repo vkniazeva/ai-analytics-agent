@@ -1,4 +1,5 @@
 pandas
+numpy
 fastapi
 uvicorn
 pyarrow
@@ -6,3 +7,8 @@ openpyxl
 psycopg2-binary
 python-dotenv
 dbt-postgres>=1.7
+sqlalchemy
+scikit-learn
+catboost
+category-encoders
+pytest
