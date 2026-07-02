@@ -37,5 +37,5 @@ pipeline: start init-db load dbt metadata-sync ## Complete pipeline: analytics +
 	@echo "Ensure config.yaml has data_source: database for production pipeline"
 	~/.virtualenvs/ai-analytics-agent/bin/python -m forecasting.run
 
-forecasting.api:
-	uvicorn forecasting.api.app:app --reload
+api: ## Run forecasting API server
+	~/.virtualenvs/ai-analytics-agent/bin/uvicorn forecasting.api.app:app --reload

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import logging
 from sklearn.metrics import precision_score, recall_score, f1_score, mean_absolute_error
 from catboost import CatBoostClassifier, CatBoostRegressor
 
@@ -7,6 +8,8 @@ from forecasting.utils.config_handler import return_config
 from forecasting.utils.database import write_sql
 from forecasting.utils.exceptions import ModelDegradationError
 from forecasting.utils.database import read_sql
+
+logger = logging.getLogger(__name__)
 
 
 def _create_test_set(df: pd.DataFrame, weeks_split: int, features: list, target: str) -> tuple:
@@ -80,11 +83,15 @@ def _evaluate_business_metrics_by_item(results_df: pd.DataFrame,
     return by_item
 
 
-def _check_degradation(accuracy: float, degradation_threshold: float, table_name=None) -> None:
-    # reading last accuracy from DB
+def _check_degradation(accuracy: float, degradation_threshold: float, table_name=None) -> tuple[bool, str]:
+    """
+    Check if model performance degraded compared to previous version.
 
+    Returns:
+        tuple: (is_degraded: bool, message: str)
+    """
     query = """
-        SELECT metric_value 
+        SELECT metric_value
         FROM forecasting.model_metrics
         WHERE metric_name = 'accuracy'
         ORDER BY run_id DESC
@@ -93,19 +100,23 @@ def _check_degradation(accuracy: float, degradation_threshold: float, table_name
     try:
         previous = read_sql(query, table_name)
         if len(previous) == 0:
-            return
+            return False, "No previous model to compare"
+
         previous_accuracy = previous["metric_value"].iloc[0]
         drop = (previous_accuracy - accuracy) / previous_accuracy
+
         if drop > degradation_threshold:
-            raise ModelDegradationError(
+            message = (
                 f"Model accuracy dropped by {round(drop * 100, 1)}% "
                 f"(previous: {previous_accuracy:.3f}, current: {accuracy:.3f})"
             )
-    except ModelDegradationError:
-        raise
-    except Exception:
-        # if no previous metrics, skipping this check
-        pass
+            return True, message
+
+        return False, "Performance acceptable"
+
+    except Exception as e:
+        logger.warning(f"Could not check degradation: {e}")
+        return False, "Degradation check skipped"
 
 
 def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
@@ -136,7 +147,36 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
 
     # degradation check
     versions_table_name = "model_runs"
-    _check_degradation(accuracy, degradation_threshold, versions_table_name)
+    is_degraded, degradation_message = _check_degradation(accuracy, degradation_threshold, versions_table_name)
+
+    if is_degraded:
+        # Log critical alert
+        logger.critical("="*80)
+        logger.critical("MODEL PERFORMANCE DEGRADATION DETECTED")
+        logger.critical(degradation_message)
+        logger.critical("="*80)
+        logger.critical("Actions taken:")
+        logger.critical("  - New model NOT saved to database")
+        logger.critical("  - Old model remains active")
+        logger.critical("  - Metrics logged below for analysis")
+        logger.critical("="*80)
+
+        # Log metrics for manual review
+        logger.info(f"Model Metrics (threshold={threshold_type}):")
+        logger.info(f"  Classifier - Accuracy: {accuracy:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}, F1: {f1:.3f}")
+        logger.info(f"  Regressor  - MAE: {mae:.3f}")
+        logger.info(f"  Business   - Accurate: {business_metrics['accurate_share']*100:.1f}%, "
+                   f"Waste: {business_metrics['waste_share']*100:.1f}%, "
+                   f"Lost Sale: {business_metrics['lost_sale_share']*100:.1f}%")
+
+        logger.warning("Manual review required before approving new model version")
+        logger.warning("="*80)
+
+        # DO NOT save to database - exit early
+        return
+
+    # Model performance acceptable - save to DB
+    logger.info(f"Model performance acceptable - saving to database")
 
     # write to DB
     run_df = pd.DataFrame([{

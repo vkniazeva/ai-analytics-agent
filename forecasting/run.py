@@ -1,3 +1,5 @@
+import logging
+
 from forecasting.data_preparation.data_ingestion import MockSource, DBSource
 from forecasting.data_preparation.data_cleanup.data_cleaning import clean_data
 from forecasting.data_preparation.feature_engineering.feature_engineering import build_features
@@ -6,7 +8,12 @@ from forecasting.model.model_building.train import train_model
 from forecasting.model.model_evaluation.evaluate import evaluate
 
 from forecasting.utils.config_handler import return_config, FORECASTING_PATH
-from forecasting.utils.exceptions import ModelDegradationError
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 def run_pipeline():
@@ -44,35 +51,27 @@ def run_pipeline():
 
     # STEP 6: evaluate
     print("STEP 6: MODEL EVALUATION")
-    # missed sales
+
+    # Evaluate with low_missed_sales threshold
     low_missed_sales_threshold = "low_missed_sales"
     low_missed_sales_threshold_value = config["model"]["catboost"]["low_missed_sales"]
-    try:
-        evaluate(df=df,
+    evaluate(df=df,
              classifier=classifier,
              regressor=regressor,
              threshold=low_missed_sales_threshold_value,
              threshold_type=low_missed_sales_threshold,
              model_version=model_latest_version)
-    except ModelDegradationError as e:
-        print(f"Pipeline stopped: {e}")
-        print("Human approval required before deploying new model version")
-        raise
 
-    # wastage
+    # Evaluate with low_wastage threshold
     low_wast_threshold = "low_wastage"
     low_wast_threshold_value = config["model"]["catboost"]["low_wastage"]
-    try:
-        evaluate(df=df,
+    evaluate(df=df,
              classifier=classifier,
              regressor=regressor,
              threshold=low_wast_threshold_value,
              threshold_type=low_wast_threshold,
              model_version=model_latest_version)
-    except ModelDegradationError as e:
-        print(f"Pipeline stopped: {e}")
-        print("Human approval required before deploying new model version")
-        raise
+
     print("\nPIPELINE COMPLETED")
 
 

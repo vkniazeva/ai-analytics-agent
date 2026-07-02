@@ -1,0 +1,266 @@
+openapi: 3.0.3
+info:
+  title: Fresh Food Sales Forecasting API
+  description: |
+    Real-time prediction API for fresh food demand on airline flights.
+
+    **Business Context:**
+    - Predictions are made per flight segment (e.g., JFK_LHR)
+    - Entire route must be requested separately by segments
+    - Two threshold strategies available: minimize waste vs minimize lost sales
+
+  version: 1.0.0
+  contact:
+    email: knyazevavira@gmail.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: predictions
+    description: Demand forecasting endpoints
+
+paths:
+  /predict/{threshold_type}:
+    post:
+      tags:
+        - predictions
+      summary: Predict all items
+      description: |
+        Returns expected sales quantity for all active fresh products on a flight segment.
+
+        **Business use case:** Primary forecasting endpoint. Operations team uses this
+        to determine initial stocking quantities across all items.
+      operationId: predict_all_items
+      parameters:
+        - $ref: '#/components/parameters/ThresholdType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictRequest'
+      responses:
+        '200':
+          description: Successful prediction
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PredictItemsResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /predict/{threshold_type}/item/{item_id}:
+    post:
+      tags:
+        - predictions
+      summary: Predict single item with details
+      description: |
+        Returns detailed prediction for a single item including historical average
+        and estimated accuracy.
+
+        **Business use case:** When business doubts the predicted numbers, they call
+        this endpoint to see historical baseline and model confidence. Helps justify
+        or override automated forecasts.
+      operationId: predict_item
+      parameters:
+        - $ref: '#/components/parameters/ThresholdType'
+        - name: item_id
+          in: path
+          required: true
+          description: Product item identifier (e.g., AB123)
+          schema:
+            type: string
+          example: AB123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictRequest'
+      responses:
+        '200':
+          description: Successful prediction with details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictItemResponse'
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Item AB999 not found"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /predict/{threshold_type}/category:
+    post:
+      tags:
+        - predictions
+      summary: Predict by category
+      description: |
+        Returns aggregated predictions by product category (e.g., Sandwiches, Salads).
+
+        **Business use case:** Enables category-level planning. Important for offering
+        choice including alternative products on board. If one sandwich variant is low
+        stock, business can substitute with another from the same category.
+      operationId: predict_by_category
+      parameters:
+        - $ref: '#/components/parameters/ThresholdType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictRequest'
+      responses:
+        '200':
+          description: Successful category-level prediction
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PredictCategoriesResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+components:
+  parameters:
+    ThresholdType:
+      name: threshold_type
+      in: path
+      required: true
+      description: |
+        Business objective threshold:
+        - `low_missed_sales` (0.4): Maximize revenue, accept higher waste
+        - `low_wastage` (0.7): Minimize spoilage, accept lost sales
+      schema:
+        type: string
+        enum:
+          - low_missed_sales
+          - low_wastage
+      example: low_wastage
+
+  schemas:
+    PredictRequest:
+      type: object
+      required:
+        - route
+        - expected_pax
+        - day_period
+      properties:
+        route:
+          type: string
+          description: Flight segment route (origin_destination)
+          example: "JFK_LHR"
+        expected_pax:
+          type: integer
+          description: Expected number of passengers
+          minimum: 0
+          example: 180
+        day_period:
+          type: string
+          enum:
+            - Morning
+            - Day
+            - Evening
+            - Night
+          description: Time period of the flight
+          example: "Morning"
+
+    PredictItemsResponse:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: Product item identifier
+          example: "AB123"
+        predicted_quantity:
+          type: integer
+          description: Predicted sales quantity
+          example: 12
+
+    PredictItemResponse:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: Product item identifier
+          example: "AB123"
+        threshold_type:
+          type: string
+          enum:
+            - low_missed_sales
+            - low_wastage
+          description: Threshold strategy used for prediction
+          example: "low_wastage"
+        threshold_value:
+          type: number
+          format: float
+          description: Classifier threshold value
+          example: 0.7
+        predicted_quantity:
+          type: integer
+          description: Predicted sales quantity
+          example: 12
+        historical_average:
+          type: number
+          format: float
+          description: Historical average sales for this item/route/period
+          example: 10.5
+        estimated_accuracy:
+          type: number
+          format: float
+          nullable: true
+          description: Estimated accuracy from latest model evaluation (null if no history)
+          example: 0.72
+
+    PredictCategoriesResponse:
+      type: object
+      properties:
+        category_name:
+          type: string
+          description: Product category name
+          example: "Sandwiches"
+        predicted_quantity:
+          type: integer
+          description: Aggregated predicted quantity for category
+          example: 45
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
