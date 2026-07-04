@@ -81,8 +81,8 @@ def _create_hist_avg(df: pd.DataFrame, min_samples: int) -> pd.DataFrame:
     return df
 
 def save_hist_avg_lookup(df: pd.DataFrame) -> None:
-    lookup = df[["item_id", "route", "day_period", "is_night", "hist_avg", "hist_level_used"]]
-    lookup = lookup.drop_duplicates(subset=["item_id", "route", "day_period", "is_night"])
+    lookup = df[["item_id", "route", "day_period", "hist_avg", "hist_level_used"]]
+    lookup = lookup.drop_duplicates(subset=["item_id", "route", "day_period"])
     table_name = "lookup_hist_avg"
     write_sql(lookup, table_name)
 

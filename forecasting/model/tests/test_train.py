@@ -75,31 +75,25 @@ def test_split_train_test_set_success():
     df = create_valid_dataframe()
     config_set_split = "2"  # 2 weeks
 
-    train_df, test_df = _split_train_test_set(df, config_set_split)
+    train_df = _split_train_test_set(df, config_set_split)
 
-    # Should split into two dataframes
+    # Should return a dataframe
     assert isinstance(train_df, pd.DataFrame)
-    assert isinstance(test_df, pd.DataFrame)
 
-    # Total rows should match
-    assert len(train_df) + len(test_df) == len(df)
-
-    # No overlap in data
+    # Train set should be smaller than full dataset
     assert len(train_df) > 0
-    assert len(test_df) > 0
+    assert len(train_df) < len(df)
 
 
 def test_split_train_test_set_date_ordering():
     df = create_valid_dataframe()
     config_set_split = "2"
 
-    train_df, test_df = _split_train_test_set(df, config_set_split)
+    train_df = _split_train_test_set(df, config_set_split)
 
-    # Train dates should be before test dates
-    train_max_date = train_df['date'].max()
-    test_min_date = test_df['date'].min()
-
-    assert train_max_date < test_min_date
+    # Train dates should be before cutoff
+    cutoff_date = df["date"].max() - pd.Timedelta(weeks=2)
+    assert all(train_df['date'] <= cutoff_date)
 
 
 def test_split_train_test_set_correct_cutoff():
@@ -107,25 +101,22 @@ def test_split_train_test_set_correct_cutoff():
     config_set_split = "2"
     weeks = 2
 
-    train_df, test_df = _split_train_test_set(df, config_set_split)
+    train_df = _split_train_test_set(df, config_set_split)
 
-    # Test set should be approximately 2 weeks
-    test_duration = test_df['date'].max() - test_df['date'].min()
-    expected_duration = pd.Timedelta(weeks=weeks)
+    # Check that cutoff is correct
+    cutoff_date = df["date"].max() - pd.Timedelta(weeks=weeks)
+    train_max_date = train_df['date'].max()
 
-    # Allow some tolerance for the split
-    assert test_duration >= expected_duration * 0.9
-    assert test_duration <= expected_duration * 1.1
+    assert train_max_date <= cutoff_date
 
 
 def test_split_train_test_set_different_split():
     df = create_valid_dataframe()
 
-    train_df_2w, test_df_2w = _split_train_test_set(df, "2")
-    train_df_4w, test_df_4w = _split_train_test_set(df, "4")
+    train_df_2w = _split_train_test_set(df, "2")
+    train_df_4w = _split_train_test_set(df, "4")
 
-    # 4 weeks test set should be larger than 2 weeks
-    assert len(test_df_4w) > len(test_df_2w)
+    # 4 weeks split should have smaller train set
     assert len(train_df_4w) < len(train_df_2w)
 
 
@@ -133,15 +124,14 @@ def test_split_train_test_set_preserves_columns():
     df = create_valid_dataframe()
     config_set_split = "2"
 
-    train_df, test_df = _split_train_test_set(df, config_set_split)
+    train_df = _split_train_test_set(df, config_set_split)
 
     # All columns should be preserved
     assert list(train_df.columns) == list(df.columns)
-    assert list(test_df.columns) == list(df.columns)
 
 
 # Test _train_classifier
-def test_train_classifier_returns_model_and_proba():
+def test_train_classifier_returns_model():
     df = create_valid_dataframe()
     features = ['item_id', 'route', 'day_period', 'pax_bins', 'hist_avg']
     target = 'sold_quantity'
@@ -154,16 +144,16 @@ def test_train_classifier_returns_model_and_proba():
         'random_seed': 42
     }
 
-    classifier, cls_proba = _train_classifier(df, classifier_config, features, target, cat_features)
+    classifier = _train_classifier(df, classifier_config, features, target, cat_features)
 
-    # Should return classifier and probabilities
+    # Should return classifier
     assert classifier is not None
-    assert cls_proba is not None
-    assert len(cls_proba) == len(df)
 
-    # Probabilities should be between 0 and 1
-    assert np.all(cls_proba >= 0)
-    assert np.all(cls_proba <= 1)
+    # Should be able to make predictions
+    predictions = classifier.predict_proba(df[features])[:, 1]
+    assert len(predictions) == len(df)
+    assert np.all(predictions >= 0)
+    assert np.all(predictions <= 1)
 
 
 def test_train_classifier_binary_target():
@@ -179,10 +169,10 @@ def test_train_classifier_binary_target():
         'random_seed': 42
     }
 
-    classifier, cls_proba = _train_classifier(df, classifier_config, features, target, cat_features)
+    classifier = _train_classifier(df, classifier_config, features, target, cat_features)
 
     # Classifier should predict binary (0 or 1)
-    predictions = (cls_proba >= 0.5).astype(int)
+    predictions = classifier.predict(df[features])
     assert set(predictions).issubset({0, 1})
 
 
@@ -203,13 +193,13 @@ def test_train_classifier_with_mostly_zeros():
         'random_seed': 42
     }
 
-    classifier, cls_proba = _train_classifier(df, classifier_config, features, target, cat_features)
+    classifier = _train_classifier(df, classifier_config, features, target, cat_features)
 
     # Should handle mostly-zero case
     assert classifier is not None
-    assert len(cls_proba) == len(df)
+    probas = classifier.predict_proba(df[features])[:, 1]
     # Most probabilities should be low (predicting zeros)
-    assert np.mean(cls_proba) < 0.5
+    assert np.mean(probas) < 0.5
 
 
 def test_train_classifier_with_mostly_nonzeros():
@@ -229,13 +219,13 @@ def test_train_classifier_with_mostly_nonzeros():
         'random_seed': 42
     }
 
-    classifier, cls_proba = _train_classifier(df, classifier_config, features, target, cat_features)
+    classifier = _train_classifier(df, classifier_config, features, target, cat_features)
 
     # Should handle mostly-nonzero case
     assert classifier is not None
-    assert len(cls_proba) == len(df)
+    probas = classifier.predict_proba(df[features])[:, 1]
     # Most probabilities should be high (predicting non-zeros)
-    assert np.mean(cls_proba) > 0.5
+    assert np.mean(probas) > 0.5
 
 
 # Test _train_regression
@@ -333,12 +323,11 @@ def test_split_train_test_set_small_dataset():
 
     config_set_split = "1"  # 1 week
 
-    train_df, test_df = _split_train_test_set(df, config_set_split)
+    train_df = _split_train_test_set(df, config_set_split)
 
     # Should still work with small dataset
     assert len(train_df) > 0
-    assert len(test_df) > 0
-    assert len(train_df) + len(test_df) == len(df)
+    assert len(train_df) < len(df)
 
 
 def test_train_classifier_minimal_config():
@@ -354,11 +343,12 @@ def test_train_classifier_minimal_config():
         'random_seed': 42
     }
 
-    classifier, cls_proba = _train_classifier(df, classifier_config, features, target, cat_features)
+    classifier = _train_classifier(df, classifier_config, features, target, cat_features)
 
     # Should work with minimal config
     assert classifier is not None
-    assert len(cls_proba) == len(df)
+    predictions = classifier.predict_proba(df[features])[:, 1]
+    assert len(predictions) == len(df)
 
 
 def test_train_regression_minimal_data():

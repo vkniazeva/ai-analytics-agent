@@ -82,7 +82,7 @@ def _process_regression(items_df: pd.DataFrame, regressor: CatBoostRegressor,
     if len(items_df_reg) > 0:
         items_df_reg["predicted"] = regressor.predict(
             items_df_reg[features]
-        ).round(0).astype(int)
+        ).round(0).clip(0).astype(int)
 
     return pd.concat([items_df_neg, items_df_reg], ignore_index=True)
 

@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
+from unittest.mock import patch
 
 from forecasting.data_preparation.feature_engineering.feature_engineering import (
     build_features,
@@ -74,12 +75,12 @@ def test_create_pax_bins_success():
 
     result = _create_pax_bins(df, pax_bins_config)
 
-    assert "pax_bins" in result.columns
-    assert result["pax_bins"].iloc[0] == "<100"
-    assert result["pax_bins"].iloc[1] == "100 - 150"
-    assert result["pax_bins"].iloc[2] == "150 - 180"
-    assert result["pax_bins"].iloc[3] == "180 +"
-    assert result["pax_bins"].iloc[4] == "180 +"
+    assert "pax_bin" in result.columns
+    assert result["pax_bin"].iloc[0] == "<100"
+    assert result["pax_bin"].iloc[1] == "100 - 150"
+    assert result["pax_bin"].iloc[2] == "150 - 180"
+    assert result["pax_bin"].iloc[3] == "180 +"
+    assert result["pax_bin"].iloc[4] == "180 +"
 
 
 def test_create_pax_bins_boundary_values():
@@ -92,10 +93,10 @@ def test_create_pax_bins_boundary_values():
 
     # pd.cut with include_lowest=True creates: [0,100], (100,150], (150,180], (180,300]
     # So boundary values on the right edge belong to their interval
-    assert result["pax_bins"].iloc[0] == "<100"  # 0 in [0, 100]
-    assert result["pax_bins"].iloc[1] == "<100"  # 100 in [0, 100]
-    assert result["pax_bins"].iloc[2] == "100 - 150"  # 150 in (100, 150]
-    assert result["pax_bins"].iloc[3] == "150 - 180"  # 180 in (150, 180]
+    assert result["pax_bin"].iloc[0] == "<100"  # 0 in [0, 100]
+    assert result["pax_bin"].iloc[1] == "<100"  # 100 in [0, 100]
+    assert result["pax_bin"].iloc[2] == "100 - 150"  # 150 in (100, 150]
+    assert result["pax_bin"].iloc[3] == "150 - 180"  # 180 in (150, 180]
 
 
 def test_create_pax_bins_with_nan():
@@ -107,10 +108,10 @@ def test_create_pax_bins_with_nan():
     result = _create_pax_bins(df, pax_bins_config)
 
     # NaN values should result in NaN bins
-    assert result["pax_bins"].notna().sum() == 2
-    assert result["pax_bins"].iloc[0] == "<100"
-    assert pd.isna(result["pax_bins"].iloc[1])
-    assert result["pax_bins"].iloc[2] == "100 - 150"
+    assert result["pax_bin"].notna().sum() == 2
+    assert result["pax_bin"].iloc[0] == "<100"
+    assert pd.isna(result["pax_bin"].iloc[1])
+    assert result["pax_bin"].iloc[2] == "100 - 150"
 
 
 # Test _create_hist_avg
@@ -212,14 +213,15 @@ def test_create_hist_avg_no_temporary_columns():
 
 
 # Test build_features (integration)
-def test_build_features_success():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_success(mock_write_sql):
     df = create_valid_dataframe()
 
     result = build_features(df)
 
     # All feature columns should be present
     assert "route" in result.columns
-    assert "pax_bins" in result.columns
+    assert "pax_bin" in result.columns
     assert "hist_avg" in result.columns
     assert "hist_level_used" in result.columns
 
@@ -230,7 +232,8 @@ def test_build_features_success():
     assert len(result) == len(df)
 
 
-def test_build_features_verify_all_features():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_verify_all_features(mock_write_sql):
     df = create_valid_dataframe()
 
     result = build_features(df)
@@ -238,17 +241,18 @@ def test_build_features_verify_all_features():
     # Verify route creation
     assert (result[result["origin"] == "city_001"]["route"].str.contains("city_001 _ ")).all()
 
-    # Verify pax_bins
-    assert result["pax_bins"].notna().sum() > 0
-    assert "<100" in result["pax_bins"].values
-    assert "100 - 150" in result["pax_bins"].values
+    # Verify pax_bin
+    assert result["pax_bin"].notna().sum() > 0
+    assert "<100" in result["pax_bin"].values
+    assert "100 - 150" in result["pax_bin"].values
 
     # Verify hist_avg
     assert result["hist_avg"].notna().all()
     assert result["hist_level_used"].notna().all()
 
 
-def test_build_features_does_not_modify_original():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_does_not_modify_original(mock_write_sql):
     df = create_valid_dataframe()
     original_columns = df.columns.tolist()
 
@@ -286,7 +290,8 @@ def test_build_features_missing_multiple_columns():
 
 
 # Edge cases
-def test_build_features_empty_dataframe():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_empty_dataframe(mock_write_sql):
     df = pd.DataFrame({
         "flight_key": pd.Series([], dtype=str),
         "item_id": pd.Series([], dtype=str),
@@ -302,10 +307,11 @@ def test_build_features_empty_dataframe():
 
     # Should return empty dataframe with all feature columns
     assert len(result) == 0
-    assert all(col in result.columns for col in ["route", "hist_avg", "hist_level_used", "pax_bins"])
+    assert all(col in result.columns for col in ["route", "hist_avg", "hist_level_used", "pax_bin"])
 
 
-def test_build_features_single_row():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_single_row(mock_write_sql):
     df = pd.DataFrame({
         "flight_key": ["f1"],
         "item_id": ["AB123"],
@@ -322,12 +328,13 @@ def test_build_features_single_row():
     # Should create all features even with single row
     assert len(result) == 1
     assert result["route"].iloc[0] == "city_001 _ city_003"
-    assert result["pax_bins"].iloc[0] == "<100"
+    assert result["pax_bin"].iloc[0] == "<100"
     assert result["hist_avg"].iloc[0] == 3.0  # Mean of single value
     assert result["hist_level_used"].iloc[0] == 4.0  # Falls back to level 4
 
 
-def test_build_features_all_unique_items():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_all_unique_items(mock_write_sql):
     df = pd.DataFrame({
         "flight_key": ["f1", "f2", "f3"],
         "item_id": ["AB123", "AB124", "AB125"],
@@ -348,7 +355,8 @@ def test_build_features_all_unique_items():
     assert result["hist_avg"].tolist() == [3.0, 4.0, 2.0]
 
 
-def test_build_features_with_nan_passengers():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_with_nan_passengers(mock_write_sql):
     df = pd.DataFrame({
         "flight_key": ["f1", "f2", "f3"],
         "item_id": ["AB123"] * 3,
@@ -362,13 +370,14 @@ def test_build_features_with_nan_passengers():
 
     result = build_features(df)
 
-    # Should have NaN in pax_bins for row with NaN passengers
-    assert result["pax_bins"].isna().sum() == 1
+    # Should have NaN in pax_bin for row with NaN passengers
+    assert result["pax_bin"].isna().sum() == 1
     # But hist_avg should be calculated for all rows
     assert result["hist_avg"].notna().all()
 
 
-def test_build_features_negative_sold_quantity():
+@patch('forecasting.data_preparation.feature_engineering.feature_engineering.write_sql')
+def test_build_features_negative_sold_quantity(mock_write_sql):
     df = pd.DataFrame({
         "flight_key": ["f1"] * 5,
         "item_id": ["AB123"] * 5,

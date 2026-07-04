@@ -33,10 +33,12 @@ def write_sql(df: pd.DataFrame, table_name: str, schema: str = "forecasting") ->
         path = FORECASTING_PATH / "interim_files" / f"{table_name}.csv"
         df.to_csv(path)
     else:
+        # Use replace for lookup tables to avoid duplicates
+        if_exists_mode = "replace" if table_name.startswith("lookup_") else "append"
         df.to_sql(
             name=table_name,
             con=get_engine(),
             schema=schema,
-            if_exists="append",
+            if_exists=if_exists_mode,
             index=False
         )
