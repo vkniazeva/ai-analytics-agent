@@ -1,0 +1,84 @@
+metrics:
+  revenue:
+    type: simple
+    sql: "SUM(fs.purchase_amount)"
+
+  sales_quantity:
+    type: simple
+    sql: "SUM(fs.sold_quantity)"
+
+  discounted_sales_amount:
+    type: simple
+    sql: "SUM(fs.discount_amount)"
+
+  discounted_sales_quantity:
+    type: simple
+    sql: "COUNT(DISTINCT CASE WHEN fs.discount_amount > 0 THEN fs.slip_id END)"
+
+  average_sale_amount:
+    type: ratio
+    numerator: "SUM(fs.purchase_amount)"
+    denominator: "COUNT(DISTINCT fs.slip_id)"
+
+  average_items_in_slip:
+    type: ratio
+    numerator: "SUM(fs.sold_quantity)"
+    denominator: "COUNT(DISTINCT fs.slip_id)"
+
+  share_of_discounted_sales_in_amount:
+    type: ratio
+    numerator: "SUM(fs.discount_amount)"
+    denominator: "SUM(fs.purchase_amount)"
+
+  share_of_slips_with_discounts:
+    type: ratio
+    numerator: "COUNT(DISTINCT CASE WHEN fs.discount_amount > 0 THEN fs.slip_id END)"
+    denominator: "COUNT(DISTINCT fs.slip_id)"
+
+
+dimensions:
+  year:
+    select: "dd.year"
+    requires: [dim_flights, dim_date]
+
+  month:
+    select: "dd.month"
+    requires: [dim_flights, dim_date]
+
+  day:
+    select: "dd.day"
+    requires: [ dim_flights, dim_date ]
+
+  week_day:
+    select: "dd.week_day"
+    requires: [ dim_flights, dim_date ]
+
+  is_weekend:
+    select: "dd.is_weekend"
+    requires: [ dim_flights, dim_date ]
+
+  flight_number:
+    select: "df.flight_number"
+    requires: [ dim_flights ]
+
+  route:
+    select: "df.origin || ' _ ' || df.destination"
+    requires: [ dim_flights ]
+
+  day_period:
+    select: "dt.day_period"
+    requires: [ dim_flights, dim_time ]
+
+  item_id:
+    select: "dp.item_id"
+    requires: [ dim_products ]
+
+  category:
+    select: "dp.category"
+    requires: [ dim_products ]
+
+joins:
+  dim_flights: "JOIN mart.dim_flights df ON df.flight_key = fs.flight_key"
+  dim_date: "JOIN mart.dim_date dd ON dd.date_key = df.date"
+  dim_time: "JOIN mart.dim_time dt on dt.time_key = df.hour_of_departure"
+  dim_products: "JOIN mart.dim_products dp on dp.product_key = fs.product_key"
