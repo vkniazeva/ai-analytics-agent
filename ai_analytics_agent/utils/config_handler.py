@@ -1,5 +1,5 @@
 from pathlib import Path
-from ai_analitics_agent.utils.exceptions import ValidationError
+from ai_analytics_agent.utils.exceptions import ValidationError
 import yaml
 
 SEMANTICS_PATH = Path(__file__).parent.parent
@@ -12,7 +12,7 @@ def return_config():
         semantic_layer = yaml.safe_load(f)
     return semantic_layer
 
-def validate_semantics(semantic_layer):
+def _validate_semantics(semantic_layer):
 
     metric_types = ["simple", "ratio"]
 
@@ -45,10 +45,22 @@ def validate_semantics(semantic_layer):
                     f"Dimension '{dimension}' requires unknown join '{table}'"
                 )
 
+    join_order = semantic_layer.get("join_order")
+    if join_order is None:
+        raise ValidationError("Missing 'join_order' section in semantic layer")
+
+    for table in join_keys:
+        if table not in join_order:
+            raise ValidationError(f"Join '{table}' is missing from 'join_order'")
+
+    for table in join_order:
+        if table not in join_keys:
+            raise ValidationError(f"'join_order' references unknown join '{table}'")
+
 
 def get_semantic_layer():
     semantic_layer = return_config()
-    validate_semantics(semantic_layer)
+    _validate_semantics(semantic_layer)
     return semantic_layer
 
 

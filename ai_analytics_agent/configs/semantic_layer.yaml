@@ -82,3 +82,5 @@ joins:
   dim_date: "JOIN mart.dim_date dd ON dd.date_key = df.date"
   dim_time: "JOIN mart.dim_time dt on dt.time_key = df.hour_of_departure"
   dim_products: "JOIN mart.dim_products dp on dp.product_key = fs.product_key"
+
+join_order: [dim_flights, dim_date, dim_time, dim_products]
