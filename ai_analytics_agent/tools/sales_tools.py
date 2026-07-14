@@ -1,4 +1,7 @@
+from sqlalchemy import text
+
 from ai_analytics_agent.utils.config_handler import get_semantic_layer
+from ai_analytics_agent.utils.database import get_engine
 from ai_analytics_agent.utils.exceptions import ValidationError
 
 ROW_LIMIT = 200
@@ -33,7 +36,10 @@ def get_sales_metric(metrics: list[str], group_by: list[str] = None, filters: di
         LIMIT {ROW_LIMIT + 1}
     """
 
-    # TBD DB part
+    with get_engine().connect() as conn:
+        rows = conn.execute(text(sql), params).mappings().all()
+
+    return _format_result(rows)
 
 
 def _validate_args(metrics: list[str], semantic_layer: dict, group_by: list[str] = None, filters: dict = None):

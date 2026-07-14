@@ -1,0 +1,7 @@
+CREATE ROLE agent_readonly WITH LOGIN PASSWORD 'readonly'
+
+GRANT USAGE ON SCHEMA mart TO agent_readonly
+
+GRANT SELECT ON ALL TABLES IN SCHEMA mart TO agent_readonly
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA mart GRANT SELECT ON TABLES TO agent_readonly
