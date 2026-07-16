@@ -1,5 +1,6 @@
 import pytest
-from ai_analytics_agent.tools.sales_tools import _validate_args, _build_metric_sql, _resolve_joins, _build_where
+from ai_analytics_agent.tools.sales_tools import _validate_args, _build_metric_sql, _resolve_joins, _build_where, \
+    ROW_LIMIT, _build_order, _format_result
 from ai_analytics_agent.utils.exceptions import ValidationError
 
 @pytest.fixture
@@ -92,3 +93,47 @@ def test_build_where_no_filters(semantic_layer):
     where_clause, params = _build_where(semantic_layer=semantic_layer, filters=None)
     assert where_clause == ""
     assert params == {}
+
+def test_validate_args_order_by_valid(semantic_layer):
+    _validate_args(
+        metrics=["revenue"], semantic_layer=semantic_layer,
+        group_by=["year"], order_by={"revenue": "desc"},
+    )  # не должно упасть
+
+
+def test_validate_args_order_by_unknown_key(semantic_layer):
+    with pytest.raises(ValidationError):
+        _validate_args(
+            metrics=["revenue"], semantic_layer=semantic_layer,
+            group_by=["year"], order_by={"not_requested": "desc"},
+        )
+
+
+def test_validate_args_order_by_bad_direction(semantic_layer):
+    with pytest.raises(ValidationError):
+        _validate_args(
+            metrics=["revenue"], semantic_layer=semantic_layer,
+            order_by={"revenue": "sideways"},
+        )
+
+
+def test_validate_args_limit_out_of_range(semantic_layer):
+    with pytest.raises(ValidationError):
+        _validate_args(metrics=["revenue"], semantic_layer=semantic_layer, limit=0)
+
+    with pytest.raises(ValidationError):
+        _validate_args(metrics=["revenue"], semantic_layer=semantic_layer, limit=ROW_LIMIT + 1)
+
+
+def test_validate_args_limit_valid(semantic_layer):
+    _validate_args(metrics=["revenue"], semantic_layer=semantic_layer, limit=10)
+
+
+def test_build_order_single_key():
+    assert _build_order({"revenue": "desc"}) == "ORDER BY revenue DESC"
+
+
+def test_build_order_multiple_keys():
+    result = _build_order({"revenue": "desc", "year": "asc"})
+    assert result == "ORDER BY revenue DESC, year ASC"
+

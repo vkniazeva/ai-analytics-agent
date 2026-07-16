@@ -25,6 +25,14 @@ def test_format_result_no_truncation_when_within_limit():
     assert result["truncated"] is False
 
 
+def test_format_result_force_not_truncated():
+    rows = [{"revenue": i} for i in range(10)]
+    result = _format_result(rows, row_limit=5, force_not_truncated=True)
+    print(result)
+    assert result["truncated"] is False
+    assert len(result["rows"]) == 5
+
+
 @pytest.mark.integration
 def test_get_sales_metric_end_to_end():
     result = get_sales_metric(metrics=["revenue"], group_by=["year"])

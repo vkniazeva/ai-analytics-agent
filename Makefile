@@ -31,11 +31,14 @@ metadata-sync: ## Sync metadata from dbt to database
 run: start init-db load dbt metadata-sync ## Full pipeline: start db, load data, run dbt, sync metadata
 
 forecast: ## Run forecasting (uses data_source from config.yaml: mock or database)
-	~/.virtualenvs/ai-analytics-agent/bin/python -m forecasting.run
+	./.venv/bin/python -m forecasting.run
 
 pipeline: start init-db load dbt metadata-sync ## Complete pipeline: analytics + forecasting
 	@echo "Ensure config.yaml has data_source: database for production pipeline"
-	~/.virtualenvs/ai-analytics-agent/bin/python -m forecasting.run
+	./.venv/bin/python -m forecasting.run
 
-api: ## Run forecasting API server
-	~/.virtualenvs/ai-analytics-agent/bin/uvicorn forecasting.api.app:app --reload
+api_forecast: ## Run forecasting API server
+	./.venv/bin/uvicorn forecasting.api.app:app --reload
+
+api_agent: ## Run forecasting API server
+	./.venv/bin/uvicorn ai_analytics_agent.api.app:app --reload --port 8001

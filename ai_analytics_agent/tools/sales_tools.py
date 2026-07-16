@@ -6,12 +6,17 @@ from ai_analytics_agent.utils.exceptions import ValidationError
 
 ROW_LIMIT = 200
 
-def get_sales_metric(metrics: list[str], group_by: list[str] = None, filters: dict = None):
+def get_sales_metric(metrics: list[str], group_by: list[str] = None, filters: dict = None, order_by: dict = None, limit: int = None):
+    print("CALLING SALES METRICS")
     group_by = group_by or []
     filters = filters or {}
+    order_by = order_by or {}
+    user_requested_limit = limit is not None
+    if limit is None:
+        limit = ROW_LIMIT
 
     semantic_layer = get_semantic_layer()
-    _validate_args(metrics, semantic_layer, group_by, filters)
+    _validate_args(metrics, semantic_layer, group_by, filters, order_by, limit)
 
     metric_parts = [_build_metric_sql(metric, semantic_layer) for metric in metrics]
     dimension_parts = [
@@ -27,22 +32,33 @@ def get_sales_metric(metrics: list[str], group_by: list[str] = None, filters: di
         group_by_columns = [semantic_layer["dimensions"][dim]["select"] for dim in group_by]
         group_by_clause = "GROUP BY " + ", ".join(group_by_columns)
 
+    order_by_clause = _build_order(order_by) if order_by else ""
+
+    if user_requested_limit:
+        limit_value = limit
+    else:
+        limit_value = ROW_LIMIT + 1
+
     sql = f"""
         SELECT {select_clause}
         FROM mart.fact_sales fs
         {join_clause}
         {where_clause}
         {group_by_clause}
-        LIMIT {ROW_LIMIT + 1}
+        {order_by_clause}
+        LIMIT {limit_value}
     """
 
     with get_engine().connect() as conn:
         rows = conn.execute(text(sql), params).mappings().all()
 
+    print(sql)
+
+    print("FETCHED FROM DB")
     return _format_result(rows)
 
 
-def _validate_args(metrics: list[str], semantic_layer: dict, group_by: list[str] = None, filters: dict = None):
+def _validate_args(metrics: list[str], semantic_layer: dict, group_by: list[str] = None, filters: dict = None, order_by: dict = None, limit: int = None):
     # check that at least one metric is given
     if not metrics:
         raise ValidationError("Incorrect request. No metrics are given")
@@ -70,7 +86,20 @@ def _validate_args(metrics: list[str], semantic_layer: dict, group_by: list[str]
             if f not in semantic_layer["dimensions"]:
                 raise ValidationError(f"Unknown filter clause: {f}")
 
-    # check grou_by and filters join order
+    # check order_by
+    order_by = order_by or {}
+    allowed_ordering_values = ["asc", "desc"]
+    for order_key, order_value in order_by.items():
+        if order_key not in metrics and order_key not in group_by:
+            raise ValidationError(f"Unknown order_by value: {order_key}")
+        if order_value not in allowed_ordering_values:
+            raise ValidationError(f"Unknown ordering statement: {order_value}")
+
+    # check limit
+    if limit is not None:
+        if not 0 < limit <= ROW_LIMIT:
+            raise ValidationError(f"Provided limit value {limit} doesn't match the criteria (from 0 to {ROW_LIMIT})")
+
 
 
 def _build_metric_sql(metric: str, semantic_layer: dict) -> str:
@@ -119,8 +148,13 @@ def _build_where(semantic_layer: dict, filters: dict = None)-> tuple[str, dict]:
     where_clause = "WHERE " + " AND ".join(where_parts)
     return where_clause, params
 
-def _format_result(rows: list[str], row_limit: int = ROW_LIMIT) -> dict:
-    truncated = len(rows) > row_limit
+def _build_order(order_by: dict) -> str:
+
+    order_parts = [f"{key} {direction.upper()}" for key, direction in order_by.items()]
+    return "ORDER BY " + ", ".join(order_parts)
+
+def _format_result(rows: list[str], row_limit: int = ROW_LIMIT, force_not_truncated: bool = False) -> dict:
+    truncated = (not force_not_truncated) and (len(rows) > row_limit)
     trimmed_rows = rows[:row_limit]
 
     formatted_rows = []
