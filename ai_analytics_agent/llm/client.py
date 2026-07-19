@@ -1,23 +1,34 @@
 import json
+import logging
 
-from ai_analytics_agent.tools.sales_tools import ROW_LIMIT
-from ai_analytics_agent.utils.config_handler import get_semantic_layer
+from ai_analytics_agent.utils.config_handler import get_semantic_layer, ROW_LIMIT, SALES_METRIC, WASTAGE_METRIC
 import ollama
 
 # MODEL = "qwen2.5:14b-instruct"
 # MODEL = "qwen3:14b"
 MODEL = "gemma4"
 
-def build_sales_tool_schema(semantic_layer: dict) -> dict:
-    print("CALLING TOOL")
+def build_sales_tool_schema() -> dict:
+    function_name = "get_sales_metric"
+    description = "Get sales metrics (revenue, quantity, discounts, etc.), optionally grouped and filtered."
+    return _build_tool_schema(SALES_METRIC, function_name, description)
+
+def build_wastage_tool_schema() -> dict:
+    function_name = "get_wastage_metric"
+    description = "Get wastage metrics (load, wastage, fresh wastage, etc.), optionally grouped and filtered."
+    return _build_tool_schema(WASTAGE_METRIC, function_name, description)
+
+def _build_tool_schema(domain: str, function_name: str, description: str) -> dict:
+    logging.debug(f"CALLING TOOL {domain}")
+    semantic_layer = get_semantic_layer(domain)
     metric_names = list(semantic_layer["metrics"].keys())
     dimension_names = list(semantic_layer["dimensions"].keys())
 
     return {
         "type": "function",
         "function": {
-            "name": "get_sales_metric",
-            "description": "Get sales metrics (revenue, quantity, discounts, etc.), optionally grouped and filtered.",
+            "name": function_name,
+            "description": description,
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -64,6 +75,8 @@ def build_sales_tool_schema(semantic_layer: dict) -> dict:
         },
     }
 
+
+
 def has_tool_calls(message) -> bool:
     return bool(message.get("tool_calls"))
 
@@ -71,6 +84,4 @@ def call_llm(messages, tools, model=MODEL):
     response = ollama.chat(model=model, messages=messages, tools=tools, think=False)
     return response["message"]
 
-semantic_layer = get_semantic_layer()
-# print(json.dumps(build_sales_tool_schema(semantic_layer), indent=2))
 

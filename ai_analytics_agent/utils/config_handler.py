@@ -4,9 +4,13 @@ import yaml
 
 SEMANTICS_PATH = Path(__file__).parent.parent
 
-def return_config():
+ROW_LIMIT = 200
+SALES_METRIC = "sales"
+WASTAGE_METRIC = "wastage"
 
-    config_path = SEMANTICS_PATH / "configs" / "semantic_layer.yaml"
+def return_config(domain: str):
+
+    config_path = SEMANTICS_PATH / "configs" / f"{domain}_semantic_layer.yaml"
 
     with open(config_path, "r") as f:
         semantic_layer = yaml.safe_load(f)
@@ -58,8 +62,10 @@ def _validate_semantics(semantic_layer):
             raise ValidationError(f"'join_order' references unknown join '{table}'")
 
 
-def get_semantic_layer():
-    semantic_layer = return_config()
+def get_semantic_layer(domain: str):
+    if domain not in (SALES_METRIC, WASTAGE_METRIC):
+        raise ValidationError(f"Unknown metric type: {domain}")
+    semantic_layer = return_config(domain)
     _validate_semantics(semantic_layer)
     return semantic_layer
 

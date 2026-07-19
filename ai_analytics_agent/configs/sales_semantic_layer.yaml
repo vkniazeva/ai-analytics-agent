@@ -77,6 +77,8 @@ dimensions:
     select: "dp.category"
     requires: [ dim_products ]
 
+from: "mart.fact_sales fs"
+
 joins:
   dim_flights: "JOIN mart.dim_flights df ON df.flight_key = fs.flight_key"
   dim_date: "JOIN mart.dim_date dd ON dd.date_key = df.date"

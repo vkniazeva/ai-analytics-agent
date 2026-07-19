@@ -1,0 +1,94 @@
+metrics:
+  loads_count:
+    type: simple
+    sql: "count(distinct fw.load_id)"
+
+  loaded_quantity:
+    type: simple
+    sql: "sum(fw.load_quantity)"
+
+  sold_quantity:
+    type: simple
+    sql: "sum(fw.sold_quantity)"
+
+  non_fresh_wastage_quantity:
+    type: simple
+    sql: "sum(fw.wastage_quantity)"
+
+  fresh_wastage_quantity:
+    type: simple
+    sql: "sum(fw.fresh_wastage_quantity)"
+
+  total_wastage:
+    type: simple
+    sql: "sum(fw.wastage_quantity) + sum(fw.fresh_wastage_quantity)"
+
+  sell_through_rate:
+    type: ratio
+    numerator: "SUM(fw.sold_quantity)"
+    denominator: "SUM(fw.load_quantity)"
+
+  fresh_wastage_rate:
+    type: ratio
+    numerator: "SUM(fw.fresh_wastage_quantity)"
+    denominator: "SUM(fw.load_quantity)"
+
+  non_fresh_wastage_rate:
+    type: ratio
+    numerator: "sum(fw.wastage_quantity)"
+    denominator: "SUM(fw.load_quantity)"
+
+  wastage_rate:
+    type: ratio
+    numerator: "sum(fw.wastage_quantity)"
+    denominator: "sum(fw.wastage_quantity) + sum(fw.fresh_wastage_quantity)"
+
+dimensions:
+  load_id:
+    select: "fw.load_id"
+    requires: []
+
+  item_id:
+    select: "dp.item_id"
+    requires: [ dim_products ]
+
+  category:
+    select: "dp.category"
+    requires: [ dim_products ]
+
+  is_food:
+    select: "dp.is_food"
+    requires: [ dim_products ]
+
+  destination:
+    select: "df.destination"
+    requires: [ dim_flights ]
+
+  year:
+    select: "dd.year"
+    requires: [dim_flights, dim_date]
+
+  month:
+    select: "dd.month"
+    requires: [dim_flights, dim_date]
+
+  day:
+    select: "dd.day"
+    requires: [ dim_flights, dim_date ]
+
+  week_day:
+    select: "dd.week_day"
+    requires: [ dim_flights, dim_date ]
+
+  is_weekend:
+    select: "dd.is_weekend"
+    requires: [ dim_flights, dim_date ]
+
+from: "mart.fact_wastage fw"
+
+joins:
+  dim_flights: "JOIN mart.dim_flights df ON df.flight_key_with_date = fw.flight_key_with_date"
+  dim_date: "JOIN mart.dim_date dd ON dd.date_key = df.date"
+  dim_products: "JOIN mart.dim_products dp on dp.product_key = fw.product_key"
+
+join_order: [dim_flights, dim_date, dim_products]

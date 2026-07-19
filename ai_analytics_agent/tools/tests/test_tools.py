@@ -2,7 +2,10 @@ from decimal import Decimal
 
 import pytest
 
-from ai_analytics_agent.tools.sales_tools import _format_result, get_sales_metric
+from ai_analytics_agent.tools.query_engine import _format_result
+from ai_analytics_agent.tools.sales_tools import get_sales_metric
+from ai_analytics_agent.tools.wastage_tools import get_wastage_metric
+
 
 
 def test_format_result_converts_decimal_to_float():
@@ -38,3 +41,9 @@ def test_get_sales_metric_end_to_end():
     result = get_sales_metric(metrics=["revenue"], group_by=["year"])
     assert isinstance(result["rows"], list)
     assert "revenue" in result["rows"][0]
+
+@pytest.mark.integration
+def test_get_wastage_metric_end_to_end():
+    result = get_wastage_metric(metrics=["loaded_quantity"], group_by=["month"])
+    assert isinstance(result["rows"], list)
+    assert "loaded_quantity" in result["rows"][0]
