@@ -1,0 +1,16 @@
+from: "mart.dim_flights df"
+metrics:
+  flight_count:
+    type: simple
+    sql: "COUNT(DISTINCT df.flight_key)"
+dimensions:
+  year: {select: "dd.year", requires: [dim_date]}
+  month: {select: "dd.month", requires: [dim_date]}
+  week_day: {select: "dd.week_day", requires: [dim_date]}
+  is_night: {select: "dt.is_night", requires: [dim_time]}
+  day_period: {select: "dt.day_period", requires: [dim_time]}
+  am_pm: {select: "dt.am_pm", requires: [dim_time]}
+joins:
+  dim_date: "JOIN mart.dim_date dd ON dd.date_key = df.date"
+  dim_time: "JOIN mart.dim_time dt ON dt.time_key = df.hour_of_departure"
+join_order: [dim_date, dim_time]

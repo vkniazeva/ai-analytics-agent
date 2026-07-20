@@ -13,9 +13,10 @@ architecture, semantic analytics API, and LLM-driven insights generation.
 4. [Data Handling](#data-handling)
 5. [Data Warehouse (Star Schema)](#data-warehouse-star-schema)
 6. [Data Model (ER Diagram)](#data-model-er-diagram)
-7. [Setup](#setup)
-8. [Changelog and State](#changelog-and-state)
-9. [Other](#other)
+7. [AI Analytics Agent](#ai-analytics-agent)
+8. [Setup](#setup)
+9. [Changelog and State](#changelog-and-state)
+10. [Other](#other)
 
 ---
 
@@ -41,8 +42,7 @@ This project simulates an airline retail analytics environment and demonstrates 
 * Superset BI dashboards
 * Fresh food demand forecasting (EDA module)
 * (In Progress) ML forecasting models
-* (Planned) Analytics API
-* (Planned) LLM-powered analytics agent
+* **AI analytics agent** - natural language Q&A over the warehouse via a governed semantic layer and a local LLM (FastAPI + Ollama)
 
 ---
 
@@ -264,6 +264,45 @@ This enables programmatic access to the data model structure, supporting future 
 
 ---
 
+## AI Analytics Agent
+
+A natural-language interface over the `mart` schema: business users ask questions like *"what's the average
+spend per passenger?"* or *"top 10 worst-selling products in Cold Beverages last December"*, and the agent
+answers them by calling governed metric queries rather than free-form SQL.
+
+**Business logic**: each business domain (sales, wastage, flight catalog, product catalog, passenger sales)
+has a fixed, pre-approved set of metrics and dimensions defined in a semantic layer config. The LLM can only
+ever request combinations that already exist there — it cannot invent a metric, join an unrelated table, or
+run arbitrary SQL. This gives consistent metric definitions exposed conversationally, without an engineer
+writing a one-off query per request.
+
+**Architecture**: a FastAPI endpoint (`POST /ask`) keeps per-conversation message history and drives a
+tool-calling loop against a local Ollama model. The LLM picks one of 5 tools (one per domain); each tool call
+is validated against that domain's semantic layer YAML and turned into SQL by a generic query engine, reading
+directly from the same star schema (`mart.*`) described above — the agent adds no new data, only a
+conversational layer on top of the existing warehouse.
+
+```mermaid
+flowchart LR
+    User -->|question| API["FastAPI /ask"]
+    API --> AgentLoop["Agent loop"]
+    AgentLoop <-->|tool calling| LLM["Local LLM (Ollama)"]
+    AgentLoop --> QueryEngine["Query engine +\nsemantic layer configs"]
+    QueryEngine --> DB[("PostgreSQL mart schema")]
+```
+
+**Implementation, setup (LLM config, tool/config details), and current limitations** (in-memory conversation
+store, local-model reliability, no auth, etc.) are documented in
+[`ai_analytics_agent/README.md`](ai_analytics_agent/README.md).
+
+Run it with:
+
+```bash
+make api_agent   # uvicorn ai_analytics_agent.api.app:app --reload --port 8001
+```
+
+---
+
 ## Setup
 
 ### Prerequisites
@@ -323,6 +362,11 @@ admin / admin
   * EDA notebook with 10-section analysis
   * `mart_fresh_food_order_sale` analytical table
   * Feature analysis and model strategy documentation
+* **AI analytics agent** - see [AI Analytics Agent](#ai-analytics-agent)
+  * Semantic layer configs (metrics, dimensions, joins) for sales, wastage, flights, product catalog, passenger sales
+  * FastAPI `/ask` endpoint with conversation history
+  * LLM tool-calling agent loop (local Ollama model) + generic SQL query engine
+  * Test coverage across tools, llm, api, and utils layers
 
 ---
 
@@ -337,9 +381,7 @@ admin / admin
 ### Next Steps
 
 * Production forecasting pipeline
-* Analytics API (FastAPI)
-* Semantic layer (metrics definitions)
-* LLM agent integration
+* Address AI agent limitations (see [AI Analytics Agent](#ai-analytics-agent) / [`ai_analytics_agent/README.md`](ai_analytics_agent/README.md)): persistent conversation store, retry on empty LLM responses, surfaced error handling, auth
 
 ---
 

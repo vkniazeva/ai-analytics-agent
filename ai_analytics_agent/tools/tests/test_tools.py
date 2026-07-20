@@ -5,6 +5,9 @@ import pytest
 from ai_analytics_agent.tools.query_engine import _format_result
 from ai_analytics_agent.tools.sales_tools import get_sales_metric
 from ai_analytics_agent.tools.wastage_tools import get_wastage_metric
+from ai_analytics_agent.tools.flight_catalog_tools import get_flight_catalog_metric
+from ai_analytics_agent.tools.product_catalog_tools import get_product_catalog_metric
+from ai_analytics_agent.tools.pax_sales_tools import get_pax_sales_metric
 
 
 
@@ -47,3 +50,21 @@ def test_get_wastage_metric_end_to_end():
     result = get_wastage_metric(metrics=["loaded_quantity"], group_by=["month"])
     assert isinstance(result["rows"], list)
     assert "loaded_quantity" in result["rows"][0]
+
+@pytest.mark.integration
+def test_get_flight_catalog_metric_end_to_end():
+    result = get_flight_catalog_metric(metrics=["flight_count"], group_by=["year"])
+    assert isinstance(result["rows"], list)
+    assert "flight_count" in result["rows"][0]
+
+@pytest.mark.integration
+def test_get_product_catalog_metric_end_to_end():
+    result = get_product_catalog_metric(metrics=["item_count"], group_by=["category"])
+    assert isinstance(result["rows"], list)
+    assert "item_count" in result["rows"][0]
+
+@pytest.mark.integration
+def test_get_pax_sales_metric_end_to_end():
+    result = get_pax_sales_metric(metrics=["avg_sales_per_passenger"], group_by=["year"])
+    assert isinstance(result["rows"], list)
+    assert "avg_sales_per_passenger" in result["rows"][0]

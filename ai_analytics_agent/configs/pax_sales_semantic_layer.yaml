@@ -1,0 +1,46 @@
+from: "mart.mart_pax_sales mfs"
+
+metrics:
+  passenger_count:
+    type: simple
+    sql: "SUM(mfs.passenger_count)"
+
+  number_of_tickets:
+    type: simple
+    sql: "SUM(mfs.number_of_tickets)"
+
+  sold_quantity:
+    type: simple
+    sql: "SUM(mfs.sold_quantity)"
+
+  purchase_amount:
+    type: simple
+    sql: "SUM(mfs.purchase_amount)"
+
+  avg_sales_per_passenger:
+    type: ratio
+    numerator: "SUM(mfs.purchase_amount)"
+    denominator: "SUM(mfs.passenger_count)"
+
+  avg_items_per_passenger:
+    type: ratio
+    numerator: "SUM(mfs.sold_quantity)"
+    denominator: "SUM(mfs.passenger_count)"
+
+dimensions:
+  year: {select: "mfs.year", requires: []}
+  month: {select: "mfs.month", requires: []}
+  day: {select: "mfs.day", requires: []}
+  week_day: {select: "mfs.week_day", requires: []}
+  weekday_name: {select: "mfs.weekday_name", requires: []}
+  is_weekend: {select: "mfs.is_weekend", requires: []}
+  origin: {select: "mfs.origin", requires: []}
+  destination: {select: "mfs.destination", requires: []}
+  route: {select: "mfs.route", requires: []}
+  day_period: {select: "mfs.day_period", requires: []}
+  am_pm: {select: "mfs.am_pm", requires: []}
+  is_night: {select: "mfs.is_night", requires: []}
+  flight_number: {select: "mfs.flight_number", requires: []}
+
+joins: {}
+join_order: []

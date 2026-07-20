@@ -2,7 +2,8 @@ import logging
 
 from sqlalchemy import text
 
-from ai_analytics_agent.utils.config_handler import ROW_LIMIT, get_semantic_layer, SALES_METRIC, WASTAGE_METRIC
+from ai_analytics_agent.utils.config_handler import ROW_LIMIT, get_semantic_layer, SALES_METRIC, WASTAGE_METRIC, \
+    PAX_SALES_METRIC, FLIGHT_METRIC, PRODUCT_METRIC
 from ai_analytics_agent.utils.database import get_engine
 from ai_analytics_agent.utils.exceptions import ValidationError
 
@@ -66,7 +67,7 @@ def get_metric(metric_type: str, metrics: list[str], group_by: list[str] = None,
 
 def _validate_args(metric_type: str, metrics: list[str], semantic_layer: dict, group_by: list[str] = None, filters: dict = None, order_by: dict = None, limit: int = None):
     #check metric type only from allowed
-    if not metric_type in [SALES_METRIC, WASTAGE_METRIC]:
+    if not metric_type in [SALES_METRIC, WASTAGE_METRIC, PAX_SALES_METRIC, FLIGHT_METRIC, PRODUCT_METRIC]:
         raise ValidationError(f"Unknown metric type: {metric_type}")
 
     # check that at least one metric is given

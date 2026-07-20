@@ -1,7 +1,8 @@
 import json
 import logging
 
-from ai_analytics_agent.utils.config_handler import get_semantic_layer, ROW_LIMIT, SALES_METRIC, WASTAGE_METRIC
+from ai_analytics_agent.utils.config_handler import get_semantic_layer, ROW_LIMIT, SALES_METRIC, WASTAGE_METRIC, \
+    FLIGHT_METRIC, PRODUCT_METRIC, PAX_SALES_METRIC
 import ollama
 
 # MODEL = "qwen2.5:14b-instruct"
@@ -17,6 +18,22 @@ def build_wastage_tool_schema() -> dict:
     function_name = "get_wastage_metric"
     description = "Get wastage metrics (load, wastage, fresh wastage, etc.), optionally grouped and filtered."
     return _build_tool_schema(WASTAGE_METRIC, function_name, description)
+
+def build_flight_catalog_tool_schema() -> dict:
+    function_name = "get_flight_catalog_metric"
+    description = "Get flight catalog data (flight counts), usually grouped by date, day_period etc."
+    return _build_tool_schema(FLIGHT_METRIC, function_name, description)
+
+def build_product_catalog_tool_schema() -> dict:
+    function_name = "get_product_catalog_metric"
+    description = "Get product catalog data (items counts), usually grouped by category or item_type"
+    return _build_tool_schema(PRODUCT_METRIC, function_name, description)
+
+def build_pax_sales_catalog_tool_schema() -> dict:
+    function_name = "get_pax_sales_metric"
+    description = "Get passenger and sales data (like average sale per passenger,  optionally grouped and filtered."
+    return _build_tool_schema(PAX_SALES_METRIC, function_name, description)
+
 
 def _build_tool_schema(domain: str, function_name: str, description: str) -> dict:
     logging.debug(f"CALLING TOOL {domain}")
@@ -80,8 +97,8 @@ def _build_tool_schema(domain: str, function_name: str, description: str) -> dic
 def has_tool_calls(message) -> bool:
     return bool(message.get("tool_calls"))
 
-def call_llm(messages, tools, model=MODEL):
-    response = ollama.chat(model=model, messages=messages, tools=tools, think=False)
+def call_llm(messages, tools, model=MODEL, options=None):
+    response = ollama.chat(model=model, messages=messages, tools=tools, think=False, options=options)
     return response["message"]
 
 

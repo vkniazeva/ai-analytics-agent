@@ -1,0 +1,10 @@
+from: "mart.dim_products dp"
+metrics:
+  item_count:
+    type: simple
+    sql: "COUNT(DISTINCT dp.product_key)"
+dimensions:
+  category: {select: "dp.category", requires: []}
+  item_type: {select: "dp.item_type", requires: []}
+joins: {}
+join_order: []

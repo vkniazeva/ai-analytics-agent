@@ -7,6 +7,9 @@ SEMANTICS_PATH = Path(__file__).parent.parent
 ROW_LIMIT = 200
 SALES_METRIC = "sales"
 WASTAGE_METRIC = "wastage"
+FLIGHT_METRIC = "flights"
+PRODUCT_METRIC = "product_catalog"
+PAX_SALES_METRIC = "pax_sales"
 
 def return_config(domain: str):
 
@@ -63,7 +66,7 @@ def _validate_semantics(semantic_layer):
 
 
 def get_semantic_layer(domain: str):
-    if domain not in (SALES_METRIC, WASTAGE_METRIC):
+    if domain not in (SALES_METRIC, WASTAGE_METRIC, PRODUCT_METRIC, FLIGHT_METRIC, PAX_SALES_METRIC):
         raise ValidationError(f"Unknown metric type: {domain}")
     semantic_layer = return_config(domain)
     _validate_semantics(semantic_layer)

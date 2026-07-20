@@ -1,19 +1,43 @@
 import json
-from ai_analytics_agent.llm.client import call_llm, has_tool_calls, build_sales_tool_schema, build_wastage_tool_schema
+from ai_analytics_agent.llm.client import call_llm, has_tool_calls, build_sales_tool_schema, build_wastage_tool_schema, \
+    build_flight_catalog_tool_schema, build_product_catalog_tool_schema, build_pax_sales_catalog_tool_schema
+from ai_analytics_agent.tools.flight_catalog_tools import get_flight_catalog_metric
+from ai_analytics_agent.tools.pax_sales_tools import get_pax_sales_metric
+from ai_analytics_agent.tools.product_catalog_tools import get_product_catalog_metric
 from ai_analytics_agent.tools.sales_tools import get_sales_metric
 from ai_analytics_agent.tools.wastage_tools import get_wastage_metric
-from ai_analytics_agent.utils.config_handler import get_semantic_layer
+
 
 AVAILABLE_FUNCTIONS = {"get_sales_metric": get_sales_metric,
-                       "get_wastage_metric": get_wastage_metric}
+                       "get_wastage_metric": get_wastage_metric,
+                       "get_product_catalog_metric": get_product_catalog_metric,
+                       "get_flight_catalog_metric": get_flight_catalog_metric,
+                       "get_pax_sales_metric": get_pax_sales_metric
+                       }
+
+SYSTEM_PROMPT = {
+    "role": "system",
+    "content": (
+        "You have tools to query sales, wastage, flight, product, and passenger data. "
+        "Call the appropriate tool directly using the metrics and filters the user actually mentioned. "
+        "Do not ask the user for a time period, filters, or grouping they did not request — "
+        "if none are given, call the tool with no filters/group_by to return an all-time aggregate."
+        "After a tool returns results, you must always write a natural-language answer summarizing them — never return an empty response."
+    ),
+}
+
 MAX_ITERATIONS = 5
 
 
 def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
-    tools = [build_sales_tool_schema(), build_wastage_tool_schema()]
+    tools = [build_sales_tool_schema(), build_wastage_tool_schema(), build_flight_catalog_tool_schema(),
+             build_product_catalog_tool_schema(), build_pax_sales_catalog_tool_schema()]
+
+    if not messages or messages[0].get("role") != "system":
+        messages = [SYSTEM_PROMPT] + messages
 
     for _ in range(MAX_ITERATIONS):
-        message = call_llm(messages, tools=tools)
+        message = call_llm(messages, tools=tools, options={"temperature": 0.2} )
         messages.append(message)
 
         if not has_tool_calls(message):
