@@ -8,3 +8,11 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     conversation_id: str
+
+class DashboardMetadataResponse(BaseModel):
+    metrics: dict[str, list[str]]
+    dimensions: dict[str, list[str]]
+
+class DashboardMetricsResponse(BaseModel):
+    rows: list[dict]
+    truncated: bool

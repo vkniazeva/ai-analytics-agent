@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from ai_analytics_agent.api.app import app, CONVERSATIONS
+from ai_analytics_agent.utils.exceptions import ValidationError
 
 client = TestClient(app)
 
@@ -74,3 +75,47 @@ def test_ask_passes_only_user_question_for_new_conversation(mock_run_agent):
 
     passed_history = mock_run_agent.call_args[0][0]
     assert passed_history == [{"role": "user", "content": "what's revenue?"}]
+
+
+@patch("ai_analytics_agent.api.app.get_semantic_layer")
+def test_dashboard_metadata_returns_metrics_and_dimensions(mock_get_semantic_layer):
+    mock_get_semantic_layer.return_value = {
+        "metrics": {"revenue": {}},
+        "dimensions": {"month": {}},
+    }
+
+    response = client.get("/dashboard/metadata")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["metrics"]["sales"] == ["revenue"]
+    assert body["dimensions"]["sales"] == ["month"]
+
+
+@patch("ai_analytics_agent.api.app.get_metric")
+def test_dashboard_metrics_calls_query_engine(mock_get_metric):
+    mock_get_metric.return_value = {"rows": [{"month": 1, "revenue": 100}], "truncated": False}
+
+    response = client.get(
+        "/dashboard/metrics",
+        params={"domain": "sales", "metrics": "revenue", "group_by": "month"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["rows"] == [{"month": 1, "revenue": 100}]
+    assert body["truncated"] is False
+    mock_get_metric.assert_called_once_with("sales", ["revenue"], ["month"])
+
+
+@patch("ai_analytics_agent.api.app.get_metric")
+def test_dashboard_metrics_returns_400_on_validation_error(mock_get_metric):
+    mock_get_metric.side_effect = ValidationError("Unknown metric name: bogus")
+
+    response = client.get(
+        "/dashboard/metrics",
+        params={"domain": "sales", "metrics": "bogus"},
+    )
+
+    assert response.status_code == 400
+    assert "Unknown metric name: bogus" in response.json()["detail"]
