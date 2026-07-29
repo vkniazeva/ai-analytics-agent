@@ -50,6 +50,17 @@ def _evaluate_regressor(X_test: pd.DataFrame, y_test: pd.Series, classifier: Cat
     return results_df, mae
 
 
+def _calculate_accuracy_score(fact: pd.Series, predicted: pd.Series) -> pd.Series:
+    """
+    Symmetric partial-credit accuracy: min(fact, predicted) / max(fact, predicted).
+    Both zero counts as a perfect match (1.0); only one of them zero scores 0.
+    """
+    max_val = np.maximum(fact, predicted)
+    min_val = np.minimum(fact, predicted)
+    safe_max = max_val.where(max_val != 0, 1)
+    return (min_val / safe_max).where(max_val != 0, 1.0)
+
+
 def _evaluate_business_metrics(results_df: pd.DataFrame) -> dict:
     results_df = results_df.copy()
     results_df["diff"] = results_df["predicted"] - results_df["fact"]
@@ -58,6 +69,7 @@ def _evaluate_business_metrics(results_df: pd.DataFrame) -> dict:
     accurate = (results_df["diff"] == 0).sum()
     waste = (results_df["diff"] > 0).sum()
     lost_sale = (results_df["diff"] < 0).sum()
+    accuracy_score = _calculate_accuracy_score(results_df["fact"], results_df["predicted"]).mean()
 
     return {
         "accurate": int(accurate),
@@ -65,7 +77,8 @@ def _evaluate_business_metrics(results_df: pd.DataFrame) -> dict:
         "waste": int(waste),
         "waste_share": round(waste / total, 2),
         "lost_sale": int(lost_sale),
-        "lost_sale_share": round(lost_sale / total, 2)
+        "lost_sale_share": round(lost_sale / total, 2),
+        "accuracy_score": round(accuracy_score, 2)
     }
 
 
@@ -78,8 +91,15 @@ def _evaluate_business_metrics_by_item(results_df: pd.DataFrame,
     results_df["accurate"] = (results_df["diff"] == 0).astype(int)
     results_df["waste"] = (results_df["diff"] > 0).astype(int)
     results_df["lost_sale"] = (results_df["diff"] < 0).astype(int)
+    results_df["accuracy_score"] = _calculate_accuracy_score(results_df["fact"], results_df["predicted"])
 
-    by_item = results_df.groupby("item_id")[["accurate", "waste", "lost_sale"]].sum().reset_index()
+    by_item = results_df.groupby("item_id").agg(
+        accurate=("accurate", "sum"),
+        waste=("waste", "sum"),
+        lost_sale=("lost_sale", "sum"),
+        accuracy_score=("accuracy_score", "mean")
+    ).reset_index()
+    by_item["accuracy_score"] = by_item["accuracy_score"].round(2)
     return by_item
 
 
@@ -167,7 +187,8 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
         logger.info(f"  Regressor  - MAE: {mae:.3f}")
         logger.info(f"  Business   - Accurate: {business_metrics['accurate_share']*100:.1f}%, "
                    f"Waste: {business_metrics['waste_share']*100:.1f}%, "
-                   f"Lost Sale: {business_metrics['lost_sale_share']*100:.1f}%")
+                   f"Lost Sale: {business_metrics['lost_sale_share']*100:.1f}%, "
+                   f"Accuracy Score: {business_metrics['accuracy_score']*100:.1f}%")
 
         logger.warning("Manual review required before approving new model version")
         logger.warning("="*80)
@@ -201,6 +222,7 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
         {"run_id": run_id, "model_type": "regressor", "metric_name": "waste_share", "metric_value": business_metrics["waste_share"]},
         {"run_id": run_id, "model_type": "regressor", "metric_name": "lost_sale", "metric_value": business_metrics["lost_sale"]},
         {"run_id": run_id, "model_type": "regressor", "metric_name": "lost_sale_share", "metric_value": business_metrics["lost_sale_share"]},
+        {"run_id": run_id, "model_type": "regressor", "metric_name": "accuracy_score", "metric_value": business_metrics["accuracy_score"]},
     ]
     write_sql(pd.DataFrame(metrics), "model_metrics")
 

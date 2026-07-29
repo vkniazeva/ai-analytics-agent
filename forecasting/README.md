@@ -89,7 +89,8 @@ The forecasting pipeline follows a standard ML workflow with production-grade sa
 **What:** Metrics calculation and degradation detection  
 **How:**
 - **Technical metrics** - Accuracy, precision, recall, F1, MAE
-- **Business metrics** - Accurate %, waste %, lost sale %
+- **Business metrics** - Accurate %, waste %, lost sale %, accuracy score
+  - `accuracy_score` gives partial credit for near-miss predictions instead of only counting exact matches: `min(fact, predicted) / max(fact, predicted)` per row (1.0 when both are 0), averaged across all rows. E.g. fact=2, predicted=1 scores 0.5 instead of 0.
 - **Degradation check** - Compare accuracy to last deployed model
   - If drop >10%: Log CRITICAL, show metrics, DO NOT save model, return early
   - If acceptable: Save model + metrics to database
@@ -241,7 +242,7 @@ created_at
 ```sql
 run_id (FK)
 model_type (classifier | regressor)
-metric_name (accuracy, precision, recall, f1, mae, accurate_share, waste_share, lost_sale_share)
+metric_name (accuracy, precision, recall, f1, mae, accurate_share, waste_share, lost_sale_share, accuracy_score)
 metric_value
 ```
 
@@ -252,6 +253,7 @@ item_id
 accurate (count)
 waste (count)
 lost_sale (count)
+accuracy_score (average partial-credit score, 0-1)
 ```
 
 **`forecasting.feature_importance`**

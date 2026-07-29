@@ -9,6 +9,7 @@ from forecasting.model.model_evaluation.evaluate import (
     _evaluate_regressor,
     _evaluate_business_metrics,
     _evaluate_business_metrics_by_item,
+    _calculate_accuracy_score,
     _check_degradation
 )
 
@@ -258,6 +259,52 @@ def test_evaluate_regressor_integer_predictions():
     assert all(results_df['predicted'] == results_df['predicted'].astype(int))
 
 
+# Test _calculate_accuracy_score
+def test_calculate_accuracy_score_exact_match():
+    fact = pd.Series([1, 5, 0])
+    predicted = pd.Series([1, 5, 0])
+
+    score = _calculate_accuracy_score(fact, predicted)
+
+    assert list(score) == [1.0, 1.0, 1.0]
+
+
+def test_calculate_accuracy_score_off_by_one():
+    # fact=2, predicted=1 -> min/max = 1/2 = 0.5
+    fact = pd.Series([2])
+    predicted = pd.Series([1])
+
+    score = _calculate_accuracy_score(fact, predicted)
+
+    assert score.iloc[0] == 0.5
+
+
+def test_calculate_accuracy_score_symmetric():
+    # Over- and under-prediction of the same magnitude give the same score
+    under = _calculate_accuracy_score(pd.Series([2]), pd.Series([1]))
+    over = _calculate_accuracy_score(pd.Series([1]), pd.Series([2]))
+
+    assert under.iloc[0] == over.iloc[0] == 0.5
+
+
+def test_calculate_accuracy_score_zero_vs_zero():
+    fact = pd.Series([0])
+    predicted = pd.Series([0])
+
+    score = _calculate_accuracy_score(fact, predicted)
+
+    assert score.iloc[0] == 1.0
+
+
+def test_calculate_accuracy_score_zero_vs_nonzero():
+    # fact=0, predicted>0 and fact>0, predicted=0 both score 0 (no partial credit possible)
+    fact_zero = _calculate_accuracy_score(pd.Series([0]), pd.Series([5]))
+    predicted_zero = _calculate_accuracy_score(pd.Series([5]), pd.Series([0]))
+
+    assert fact_zero.iloc[0] == 0.0
+    assert predicted_zero.iloc[0] == 0.0
+
+
 # Test _evaluate_business_metrics
 def test_evaluate_business_metrics_success():
     results_df = pd.DataFrame({
@@ -274,10 +321,12 @@ def test_evaluate_business_metrics_success():
     assert 'waste_share' in metrics
     assert 'lost_sale' in metrics
     assert 'lost_sale_share' in metrics
+    assert 'accuracy_score' in metrics
 
     # Check types
     assert isinstance(metrics['accurate'], int)
     assert isinstance(metrics['accurate_share'], float)
+    assert isinstance(metrics['accuracy_score'], float)
 
     # Check that shares sum to 1
     assert abs(metrics['accurate_share'] + metrics['waste_share'] + metrics['lost_sale_share'] - 1.0) < 0.02
@@ -297,6 +346,7 @@ def test_evaluate_business_metrics_all_accurate():
     assert metrics['waste_share'] == 0.0
     assert metrics['lost_sale'] == 0
     assert metrics['lost_sale_share'] == 0.0
+    assert metrics['accuracy_score'] == 1.0
 
 
 def test_evaluate_business_metrics_all_waste():
@@ -344,6 +394,17 @@ def test_evaluate_business_metrics_mixed():
     assert metrics['lost_sale_share'] == round(2/6, 2)
 
 
+def test_evaluate_business_metrics_accuracy_score_partial_credit():
+    results_df = pd.DataFrame({
+        'fact': [2, 5, 0, 5, 0],
+        'predicted': [1, 5, 0, 0, 5]
+    })
+    # per-row scores: 1/2=0.5, 5/5=1, 0/0->1, 0/5=0, 0/5=0 -> mean = 0.5
+    metrics = _evaluate_business_metrics(results_df)
+
+    assert metrics['accuracy_score'] == 0.5
+
+
 # Test _evaluate_business_metrics_by_item
 def test_evaluate_business_metrics_by_item_success():
     results_df = pd.DataFrame({
@@ -359,6 +420,7 @@ def test_evaluate_business_metrics_by_item_success():
     assert 'accurate' in by_item.columns
     assert 'waste' in by_item.columns
     assert 'lost_sale' in by_item.columns
+    assert 'accuracy_score' in by_item.columns
 
     # Check that we have 2 items
     assert len(by_item) == 2
@@ -401,6 +463,24 @@ def test_evaluate_business_metrics_by_item_multiple_items():
     assert item2['accurate'] == 1
     assert item2['waste'] == 0
     assert item2['lost_sale'] == 1
+
+
+def test_evaluate_business_metrics_by_item_accuracy_score_is_averaged():
+    results_df = pd.DataFrame({
+        'fact': [2, 5, 5, 5],
+        'predicted': [1, 5, 6, 4]
+    })
+    item_ids = pd.Series(['T3L4D001', 'T3L4D001', 'T3L4D002', 'T3L4D002'])
+
+    by_item = _evaluate_business_metrics_by_item(results_df, item_ids)
+
+    # T3L4D001: scores [0.5, 1.0] -> mean 0.75
+    item1 = by_item[by_item['item_id'] == 'T3L4D001'].iloc[0]
+    assert item1['accuracy_score'] == 0.75
+
+    # T3L4D002: scores [5/6, 4/5] -> mean rounded to 2 decimals
+    item2 = by_item[by_item['item_id'] == 'T3L4D002'].iloc[0]
+    assert item2['accuracy_score'] == round((5/6 + 4/5) / 2, 2)
 
 
 # Test _check_degradation
