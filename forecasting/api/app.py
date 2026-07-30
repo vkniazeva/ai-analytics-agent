@@ -1,6 +1,7 @@
 import pandas as pd
 from catboost import CatBoostClassifier, CatBoostRegressor
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from contextlib import asynccontextmanager
 
@@ -20,6 +21,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 config = return_config()
 data_source = config["data_preparation"]["data_ingestion"]["data_source"]
 

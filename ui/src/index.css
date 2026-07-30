@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}

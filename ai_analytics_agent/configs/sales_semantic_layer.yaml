@@ -45,6 +45,10 @@ dimensions:
     select: "dd.month"
     requires: [dim_flights, dim_date]
 
+  month_year:
+    select: "LPAD(dd.month::text, 2, '0') || '-' || dd.year::text"
+    requires: [dim_flights, dim_date]
+
   day:
     select: "dd.day"
     requires: [ dim_flights, dim_date ]
