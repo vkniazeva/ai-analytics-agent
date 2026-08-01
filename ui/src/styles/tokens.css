@@ -1,0 +1,102 @@
+/* Omnevo design tokens — ported from the design handoff's design system bundle. */
+:root {
+  /* Purples */
+  --purple-light: #e7c4f3;
+  --purple-main: #9436b6;
+  --purple-deep: #5c1f72;
+  --purple-bright: #ae3fd7;
+
+  /* Greens */
+  --green-light: #5ef0bb;
+  --green-main: #00bc78;
+  --green-deep: #139c6c;
+
+  /* Neutrals */
+  --color-100: #ffffff;
+  --color-200: #f7f6f8;
+  --color-300: #efedf1;
+  --color-400: #c9c6ce;
+  --color-500: #8a8791;
+  --color-600: #6b6873;
+  --color-700: #4a4850;
+  --color-800: #151619;
+
+  /* Semantic status */
+  --success-500: #00bc78;
+  --success-100: #d3f6e8;
+  --warning-500: #ff9600;
+  --warning-100: #ffe9c9;
+  --danger-500: #e5484d;
+  --danger-100: #fbdcdd;
+  --info-500: #9436b6;
+  --info-100: #f1dbf8;
+
+  /* Ad-hoc values used alongside the tokens above */
+  --success-border: #bfeeda;
+  --info-border: #eccdf7;
+  --warning-border: #ffdba6;
+  --warning-ink: #a35f00;
+  --scrim: rgba(21, 22, 25, 0.34);
+
+  /* Text / surface / border aliases */
+  --text-strong: var(--color-800);
+  --text-body: var(--color-700);
+  --text-muted: var(--color-500);
+  --text-faint: var(--color-400);
+
+  --border-subtle: var(--color-300);
+  --border-default: var(--color-400);
+
+  /* Typography */
+  --font-sans: "Satoshi", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(21, 22, 25, 0.09), 0 1px 2px rgba(21, 22, 25, 0.05);
+  --shadow-lg: 0 12px 32px rgba(21, 22, 25, 0.13), 0 4px 8px rgba(21, 22, 25, 0.06);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Focus ring */
+  --ring-color: rgba(174, 63, 215, 0.45);
+}
+
+@keyframes omRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes omSlide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes omBlink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}

@@ -50,6 +50,7 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
             fn = AVAILABLE_FUNCTIONS[fn_name]
             try:
                 result = fn(**fn_args)
+                print(result)
             except Exception as e:
                 result = {"error": str(e)}
             messages.append({"role": "tool", "content": json.dumps(result)})

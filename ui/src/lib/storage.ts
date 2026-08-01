@@ -24,3 +24,7 @@ export function loadConversationId(): string | null {
 export function saveConversationId(conversationId: string): void {
   localStorage.setItem(CONVERSATION_ID_KEY, conversationId)
 }
+
+export function clearConversationId(): void {
+  localStorage.removeItem(CONVERSATION_ID_KEY)
+}

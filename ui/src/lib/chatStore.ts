@@ -1,7 +1,11 @@
 import { create } from 'zustand'
 import type { ChatMessage } from '../types/chat'
 import { postAsk } from './api'
-import { loadConversationId, saveConversationId } from './storage'
+import {
+  clearConversationId,
+  loadConversationId,
+  saveConversationId,
+} from './storage'
 
 interface ChatState {
   messages: ChatMessage[]
@@ -9,6 +13,7 @@ interface ChatState {
   loading: boolean
   error: string | null
   sendMessage: (question: string) => Promise<void>
+  startNewSession: () => void
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -51,5 +56,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err instanceof Error ? err.message : 'Failed to get a response',
       })
     }
+  },
+
+  startNewSession: () => {
+    clearConversationId()
+    set({ messages: [], conversationId: null, error: null })
   },
 }))

@@ -6,7 +6,7 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`rounded-lg border border-gray-200 bg-white p-4 shadow-sm ${className}`}
+      className={`rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-white shadow-[var(--shadow-sm)] ${className}`}
       {...props}
     />
   )

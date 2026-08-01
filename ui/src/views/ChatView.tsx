@@ -1,75 +1,156 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { Button } from '../components/Button'
-import { Card } from '../components/Card'
-import { Spinner } from '../components/Spinner'
+import { ArrowUp, Database, Sparkles } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
+import { MessageBlocks } from '../components/chat/MessageBlocks'
 import { useChatStore } from '../lib/chatStore'
+import { blocksFromAnswer } from '../types/chatBlocks'
+
+const SUGGESTIONS = [
+  'Which items sell out most often on morning flights?',
+  'Compare LHR-JFK with FRA-JFK basket size',
+  'Chart waste by catering station',
+]
+
+const MAX_TEXTAREA_HEIGHT = 120
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-[5px] py-1">
+      {[0, 0.16, 0.32].map((delay) => (
+        <span
+          key={delay}
+          className="h-[7px] w-[7px] rounded-full bg-purple-main"
+          style={{ animation: `omBlink 1s ${delay}s infinite` }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export function ChatView() {
   const { messages, loading, error, sendMessage } = useChatStore()
-  const [question, setQuestion] = useState('')
+  const [draft, setDraft] = useState('')
+  const threadRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    const trimmed = question.trim()
+  useEffect(() => {
+    const el = threadRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [messages, loading])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
+  }, [draft])
+
+  function submit(text: string) {
+    const trimmed = text.trim()
     if (!trimmed || loading) return
-    setQuestion('')
+    setDraft('')
     void sendMessage(trimmed)
   }
 
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      submit(draft)
+    }
+  }
+
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col gap-4">
-      <h1 className="text-xl font-semibold text-gray-900">Chat</h1>
-
-      <Card className="flex flex-1 flex-col gap-3 overflow-y-auto">
-        {messages.length === 0 && (
-          <p className="text-sm text-gray-500">Ask a question to begin.</p>
-        )}
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-              message.role === 'user'
-                ? 'ml-auto bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {message.role === 'assistant' ? (
-              <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+    <div className="flex h-full flex-col">
+      <div ref={threadRef} className="flex-1 overflow-y-auto px-8 pb-2 pt-8">
+        <div className="mx-auto flex max-w-[920px] flex-col gap-[26px]">
+          {messages.length === 0 && (
+            <p className="text-sm text-[var(--text-muted)]">
+              Ask a question to begin.
+            </p>
+          )}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              style={{ animation: 'omRise 0.3s ease' }}
+              className={message.role === 'user' ? 'flex justify-end' : 'flex gap-3.5'}
+            >
+              {message.role === 'assistant' && (
+                <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--purple-light)]">
+                  <Sparkles size={20} color="var(--purple-deep)" />
+                </div>
+              )}
+              {message.role === 'user' ? (
+                <div className="max-w-[560px] rounded-[16px_16px_4px_16px] bg-purple-main px-[18px] py-3.5 text-[14.5px] leading-[1.55] text-white">
                   {message.content}
-                </ReactMarkdown>
+                </div>
+              ) : (
+                <MessageBlocks blocks={blocksFromAnswer(message.content)} />
+              )}
+            </div>
+          ))}
+          {loading && (
+            <div className="flex gap-3.5">
+              <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--purple-light)]">
+                <Sparkles size={20} color="var(--purple-deep)" />
               </div>
-            ) : (
-              message.content
-            )}
-          </div>
-        ))}
-        {loading && (
-          <div className="flex items-center gap-2">
-            <Spinner />
-            <span className="text-sm text-gray-500">Thinking...</span>
-          </div>
-        )}
-      </Card>
+              <TypingIndicator />
+            </div>
+          )}
+          {error && <p className="text-sm text-[var(--danger-500)]">{error}</p>}
+        </div>
+      </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div
+        className="px-8 pb-6 pt-3"
+        style={{
+          background:
+            'linear-gradient(to top, var(--color-200) 70%, rgba(247,246,248,0))',
+        }}
+      >
+        <div className="mx-auto flex max-w-[920px] flex-col gap-2.5">
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => submit(s)}
+                disabled={loading}
+                className="rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-white px-3.5 py-[7px] text-[12.5px] font-medium text-[var(--text-body)] transition-colors hover:border-purple-main hover:text-purple-main disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Ask a question about your data..."
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          disabled={loading}
-        />
-        <Button type="submit" disabled={loading || !question.trim()}>
-          Send
-        </Button>
-      </form>
+          <div className="flex items-end gap-2.5 rounded-[var(--radius-lg)] border-[1.5px] border-[var(--border-subtle)] bg-white p-2.5 pl-4 shadow-[var(--shadow-sm)]">
+            <Database size={21} className="mb-2 shrink-0 text-[var(--text-faint)]" />
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about sales, routes, categories - or ask for a chart"
+              className="max-h-[120px] flex-1 resize-none bg-transparent text-[14.5px] leading-[1.5] text-[var(--text-strong)] outline-none placeholder:text-[var(--text-faint)]"
+            />
+            <button
+              type="button"
+              onClick={() => submit(draft)}
+              disabled={loading || !draft.trim()}
+              aria-label="Send"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-purple-main text-white transition-colors hover:bg-purple-deep disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowUp size={21} />
+            </button>
+          </div>
+
+          <p className="text-center text-[11.5px] text-[var(--text-muted)]">
+            Answers are generated from the onboard sales warehouse - 14.2M
+            transactions, refreshed hourly.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

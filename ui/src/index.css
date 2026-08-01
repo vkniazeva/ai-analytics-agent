@@ -1,8 +1,48 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@import "./styles/tokens.css";
+@import "./styles/fonts.css";
+
+@theme {
+  --color-purple-light: var(--purple-light);
+  --color-purple-main: var(--purple-main);
+  --color-purple-deep: var(--purple-deep);
+  --color-purple-bright: var(--purple-bright);
+  --color-green-light: var(--green-light);
+  --color-green-main: var(--green-main);
+  --color-green-deep: var(--green-deep);
+  --color-ink-100: var(--color-100);
+  --color-ink-200: var(--color-200);
+  --color-ink-300: var(--color-300);
+  --color-ink-400: var(--color-400);
+  --color-ink-500: var(--color-500);
+  --color-ink-700: var(--color-700);
+  --color-ink-800: var(--color-800);
+  --color-success-100: var(--success-100);
+  --color-success-500: var(--success-500);
+  --color-warning-100: var(--warning-100);
+  --color-warning-500: var(--warning-500);
+  --color-danger-100: var(--danger-100);
+  --color-danger-500: var(--danger-500);
+  --color-info-100: var(--info-100);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-lg: var(--shadow-lg);
+}
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background: var(--color-200);
 }
 
 #root {
