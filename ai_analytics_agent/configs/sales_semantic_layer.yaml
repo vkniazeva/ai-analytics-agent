@@ -40,14 +40,18 @@ dimensions:
   year:
     select: "dd.year"
     requires: [dim_flights, dim_date]
+    time: true
 
   month:
     select: "dd.month"
     requires: [dim_flights, dim_date]
+    time: true
 
   month_year:
     select: "LPAD(dd.month::text, 2, '0') || '-' || dd.year::text"
     requires: [dim_flights, dim_date]
+    time: true
+    sort_select: "dd.year * 100 + dd.month"
 
   day:
     select: "dd.day"

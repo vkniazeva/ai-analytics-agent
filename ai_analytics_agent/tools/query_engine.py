@@ -39,7 +39,7 @@ def get_metric(metric_type: str, metrics: list[str], group_by: list[str] = None,
         group_by_columns = [semantic_layer["dimensions"][dim]["select"] for dim in group_by]
         group_by_clause = "GROUP BY " + ", ".join(group_by_columns)
 
-    order_by_clause = _build_order(order_by) if order_by else ""
+    order_by_clause = _build_order(order_by) if order_by else _build_auto_time_order(semantic_layer, group_by)
 
     if user_requested_limit:
         limit_value = limit
@@ -158,6 +158,19 @@ def _build_where(semantic_layer: dict, filters: dict = None)-> tuple[str, dict]:
 
     where_clause = "WHERE " + " AND ".join(where_parts)
     return where_clause, params
+
+def _build_auto_time_order(semantic_layer: dict, group_by: list[str] = None) -> str:
+    group_by = group_by or []
+    time_dims = [dim for dim in group_by if semantic_layer["dimensions"].get(dim, {}).get("time")]
+    if not time_dims:
+        return ""
+
+    order_parts = []
+    for dim in time_dims:
+        dim_def = semantic_layer["dimensions"][dim]
+        order_parts.append(f"{dim_def.get('sort_select', dim_def['select'])} ASC")
+    return "ORDER BY " + ", ".join(order_parts)
+
 
 def _build_order(order_by: dict) -> str:
 

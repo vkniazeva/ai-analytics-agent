@@ -2,7 +2,6 @@ import { MessageSquare, LineChart, Plus, Settings } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useChatStore } from '../lib/chatStore'
 import { MODULES, moduleForPath } from '../lib/modules'
-import logo from '../assets/logo-dark-bg.svg'
 
 const NAV_ICONS = {
   chat: MessageSquare,
@@ -22,8 +21,6 @@ export function Sidebar() {
       className="flex w-[268px] shrink-0 flex-col bg-[var(--color-800)] px-[18px] pb-[18px] pt-[22px] text-white"
       style={{ minHeight: 820 }}
     >
-      <img src={logo} alt="Omnevo" className="h-[26px] w-auto pb-[22px]" />
-
       <div
         className="flex flex-col gap-1 pb-5"
         style={{ borderBottom: '1px solid rgba(255,255,255,.09)' }}

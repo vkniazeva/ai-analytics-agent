@@ -28,9 +28,10 @@ metrics:
     denominator: "SUM(mfs.passenger_count)"
 
 dimensions:
-  year: {select: "mfs.year", requires: []}
-  month: {select: "mfs.month", requires: []}
+  year: {select: "mfs.year", requires: [], time: true}
+  month: {select: "mfs.month", requires: [], time: true}
   day: {select: "mfs.day", requires: []}
+  month_year: {select: "LPAD(mfs.month::text, 2, '0') || '-' || mfs.year::text", requires: [], time: true, sort_select: "mfs.year * 100 + mfs.month"}
   week_day: {select: "mfs.week_day", requires: []}
   weekday_name: {select: "mfs.weekday_name", requires: []}
   is_weekend: {select: "mfs.is_weekend", requires: []}
@@ -41,6 +42,8 @@ dimensions:
   am_pm: {select: "mfs.am_pm", requires: []}
   is_night: {select: "mfs.is_night", requires: []}
   flight_number: {select: "mfs.flight_number", requires: []}
+  product_id: {select: "mfs.item_id", requires: []}
+  product_category: {select: "mfs.category", requires: []}
 
 joins: {}
 join_order: []

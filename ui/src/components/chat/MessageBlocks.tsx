@@ -1,4 +1,4 @@
-import { Code2, Download, Lightbulb, Table as TableIcon } from 'lucide-react'
+import { Lightbulb } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type {
@@ -8,6 +8,7 @@ import type {
   ProseBlock,
   TableBlock,
 } from '../../types/chatBlocks'
+import { AnalyticsChart, SERIES_COLORS } from '../AnalyticsChart'
 
 function ProseBlockView({ block }: { block: ProseBlock }) {
   return (
@@ -21,84 +22,34 @@ function ChartBlockView({ block }: { block: ChartBlock }) {
   return (
     <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-white shadow-[var(--shadow-sm)]">
       <div className="flex items-start justify-between gap-3 px-5 pt-4">
-        <div>
-          <div className="text-sm font-bold text-[var(--text-strong)]">
-            {block.title}
-          </div>
-          {block.caption && (
-            <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-              {block.caption}
-            </div>
-          )}
+        <div className="text-sm font-bold text-[var(--text-strong)]">
+          {block.title}
         </div>
-        <div className="flex gap-3">
-          {block.series.map((s) => (
+        <div className="flex flex-wrap justify-end gap-3">
+          {block.seriesKeys.map((key, index) => (
             <span
-              key={s.label}
+              key={key}
               className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-body)]"
             >
               <span
                 className="h-[9px] w-[9px] rounded-[3px]"
-                style={{ backgroundColor: s.color }}
+                style={{ backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length] }}
               />
-              {s.label}
+              {key}
             </span>
           ))}
         </div>
       </div>
 
-      <div
-        className="grid items-end gap-[18px] px-[22px] pt-3"
-        style={{
-          gridTemplateColumns: `repeat(${block.categories.length}, 1fr)`,
-          height: 208,
-        }}
-      >
-        {block.values.map((columnValues, i) => (
-          <div key={i} className="flex h-full items-end gap-1">
-            {columnValues.map((value, seriesIndex) => (
-              <div
-                key={seriesIndex}
-                className="flex-1 rounded-t-[5px]"
-                style={{
-                  height: `${Math.max(0, Math.min(1, value)) * 100}%`,
-                  backgroundColor: block.series[seriesIndex]?.color,
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div
-        className="grid gap-[18px] px-[22px] pb-3 pt-2 text-center text-[11.5px] text-[var(--text-muted)]"
-        style={{ gridTemplateColumns: `repeat(${block.categories.length}, 1fr)` }}
-      >
-        {block.categories.map((c) => (
-          <div key={c}>{c}</div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between border-t border-[var(--border-subtle)] bg-[var(--color-200)] px-5 py-2.5">
-        <div className="flex gap-1">
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--text-body)] hover:bg-[var(--color-300)]"
-          >
-            <Download size={14} /> PNG
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--text-body)] hover:bg-[var(--color-300)]"
-          >
-            <TableIcon size={14} /> CSV
-          </button>
-        </div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--text-body)] hover:bg-[var(--color-300)]"
-        >
-          <Code2 size={14} /> Show query
-        </button>
+      <div className="px-3 pb-4 pt-3">
+        <AnalyticsChart
+          chartType={block.chartType}
+          xKey={block.xKey}
+          seriesKeys={block.seriesKeys}
+          data={block.data}
+          height={360}
+          showLegend={false}
+        />
       </div>
     </div>
   )

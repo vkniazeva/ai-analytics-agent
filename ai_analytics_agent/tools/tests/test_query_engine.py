@@ -1,7 +1,7 @@
 import pytest
 
 from ai_analytics_agent.tools.query_engine import _validate_args, _build_metric_sql, _resolve_joins, _build_where, \
-    _build_order
+    _build_order, _build_auto_time_order
 from ai_analytics_agent.utils.config_handler import SALES_METRIC, ROW_LIMIT
 
 from ai_analytics_agent.utils.exceptions import ValidationError
@@ -16,6 +16,10 @@ def semantic_layer():
         "dimensions": {
             "year": {"select": "dd.year", "requires": ["dim_flights", "dim_date"]},
             "flight_number": {"select": "df.flight_number", "requires": ["dim_flights"]},
+            "month_year": {
+                "select": "dd.month_year", "requires": ["dim_flights", "dim_date"],
+                "time": True, "sort_select": "dd.year * 100 + dd.month",
+            },
         },
         "joins": {
             "dim_flights": "JOIN mart.dim_flights df ON df.flight_key = fs.flight_key",
@@ -146,4 +150,24 @@ def test_build_order_single_key():
 def test_build_order_multiple_keys():
     result = _build_order({"revenue": "desc", "year": "asc"})
     assert result == "ORDER BY revenue DESC, year ASC"
+
+
+def test_build_auto_time_order_uses_sort_select_when_present(semantic_layer):
+    result = _build_auto_time_order(semantic_layer, group_by=["month_year"])
+    assert result == "ORDER BY dd.year * 100 + dd.month ASC"
+
+
+def test_build_auto_time_order_falls_back_to_select_without_sort_select(semantic_layer):
+    semantic_layer["dimensions"]["year"]["time"] = True
+    result = _build_auto_time_order(semantic_layer, group_by=["year"])
+    assert result == "ORDER BY dd.year ASC"
+
+
+def test_build_auto_time_order_empty_when_no_time_dims(semantic_layer):
+    result = _build_auto_time_order(semantic_layer, group_by=["flight_number"])
+    assert result == ""
+
+
+def test_build_auto_time_order_empty_when_group_by_none(semantic_layer):
+    assert _build_auto_time_order(semantic_layer, group_by=None) == ""
 

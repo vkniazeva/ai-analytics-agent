@@ -86,6 +86,10 @@ def _build_tool_schema(domain: str, function_name: str, description: str) -> dic
                         "minimum": 1,
                         "maximum": ROW_LIMIT,
                     },
+                    "visualize": {
+                        "type": "boolean",
+                        "description": "Optional: if user asks to show or chart the data, this flag should be set to true and it will initiate a chart creation"
+                    },
                 },
                 "required": ["metrics"],
             },

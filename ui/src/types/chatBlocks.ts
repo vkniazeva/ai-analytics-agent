@@ -1,16 +1,12 @@
-export interface ChartSeries {
-  label: string
-  color: string
-}
+import type { ChatMessage } from './chat'
 
 export interface ChartBlock {
   type: 'chart'
+  chartType: 'bar' | 'line'
+  xKey: string
+  seriesKeys: string[]
+  data: Record<string, string | number>[]
   title: string
-  caption?: string
-  series: ChartSeries[]
-  categories: string[]
-  /** values[categoryIndex][seriesIndex], each 0-1 as a share of the tallest bar */
-  values: number[][]
 }
 
 export interface TableBlock {
@@ -31,11 +27,19 @@ export interface ProseBlock {
 
 export type MessageBlock = ProseBlock | ChartBlock | TableBlock | InsightBlock
 
-/**
- * The real /ask endpoint only returns markdown prose today. This wraps that
- * text as a single prose block so the renderer's block union is exercised
- * end to end; chart/table/insight blocks activate once the API returns them.
- */
-export function blocksFromAnswer(answer: string): MessageBlock[] {
-  return [{ type: 'prose', text: answer }]
+export function blocksFromMessage(message: ChatMessage): MessageBlock[] {
+  const blocks: MessageBlock[] = [{ type: 'prose', text: message.content }]
+
+  if (message.chart) {
+    blocks.push({
+      type: 'chart',
+      chartType: message.chart.chart_type,
+      xKey: message.chart.x_key,
+      seriesKeys: message.chart.series_keys,
+      data: message.chart.data,
+      title: message.chart.title,
+    })
+  }
+
+  return blocks
 }

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { MessageBlocks } from '../components/chat/MessageBlocks'
 import { useChatStore } from '../lib/chatStore'
-import { blocksFromAnswer } from '../types/chatBlocks'
+import { blocksFromMessage } from '../types/chatBlocks'
 
 const SUGGESTIONS = [
   'Which items sell out most often on morning flights?',
@@ -85,7 +85,7 @@ export function ChatView() {
                   {message.content}
                 </div>
               ) : (
-                <MessageBlocks blocks={blocksFromAnswer(message.content)} />
+                <MessageBlocks blocks={blocksFromMessage(message)} />
               )}
             </div>
           ))}

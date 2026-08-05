@@ -44,6 +44,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         id: crypto.randomUUID(),
         role: 'assistant',
         content: response.answer,
+        chart: response.chart ?? undefined,
       }
       set((state) => ({
         messages: [...state.messages, assistantMessage],
