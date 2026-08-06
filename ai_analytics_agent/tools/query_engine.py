@@ -37,6 +37,7 @@ def get_metric(metric_type: str, metrics: list[str], group_by: list[str] = None,
     group_by_clause = ""
     if group_by:
         group_by_columns = [semantic_layer["dimensions"][dim]["select"] for dim in group_by]
+        group_by_columns += _extra_group_by_for_time_order(semantic_layer, group_by, group_by_columns)
         group_by_clause = "GROUP BY " + ", ".join(group_by_columns)
 
     order_by_clause = _build_order(order_by) if order_by else _build_auto_time_order(semantic_layer, group_by)
@@ -158,6 +159,19 @@ def _build_where(semantic_layer: dict, filters: dict = None)-> tuple[str, dict]:
 
     where_clause = "WHERE " + " AND ".join(where_parts)
     return where_clause, params
+
+def _extra_group_by_for_time_order(semantic_layer: dict, group_by: list[str], existing_columns: list[str]) -> list[str]:
+    group_by = group_by or []
+    extras = []
+    for dim in group_by:
+        dim_def = semantic_layer["dimensions"].get(dim, {})
+        if not dim_def.get("time"):
+            continue
+        sort_select = dim_def.get("sort_select")
+        if sort_select and sort_select not in existing_columns and sort_select not in extras:
+            extras.append(sort_select)
+    return extras
+
 
 def _build_auto_time_order(semantic_layer: dict, group_by: list[str] = None) -> str:
     group_by = group_by or []

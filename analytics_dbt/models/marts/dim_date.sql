@@ -12,6 +12,7 @@ select
     {{ year_from_date('date_day') }} as year,
     {{ month_from_date('date_day') }} as month,
     {{ day_from_date('date_day')}} as day,
+    {{ month_year_from_date('date_day') }} as month_year,
     {{ quarter_from_date('date_day') }} as quarter,
     {{ day_of_week('date_day') }} as week_day,
     to_char(date_day, 'Month') as month_name,

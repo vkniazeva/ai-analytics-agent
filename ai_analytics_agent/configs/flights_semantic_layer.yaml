@@ -6,7 +6,7 @@ metrics:
 dimensions:
   year: {select: "dd.year", requires: [dim_date], time: true}
   month: {select: "dd.month", requires: [dim_date], time: true}
-  month_year: {select: "LPAD(dd.month::text, 2, '0') || '-' || dd.year::text", requires: [dim_date], time: true, sort_select: "dd.year * 100 + dd.month"}
+  month_year: {select: "dd.month_year", requires: [dim_date], time: true, sort_select: "dd.year * 100 + dd.month"}
   week_day: {select: "dd.week_day", requires: [dim_date]}
   is_night: {select: "dt.is_night", requires: [dim_time]}
   day_period: {select: "dt.day_period", requires: [dim_time]}

@@ -50,6 +50,21 @@
     day({{ date_column }})
 {% endmacro %}
 
+
+--month-year
+{% macro month_year_from_date(date_column) %}
+    {{ return(adapter.dispatch('month_year_from_date')(date_column)) }}
+{% endmacro %}
+
+{% macro postgres__month_year_from_date(date_column) %}
+    to_char({{ date_column }}, 'MM-YYYY')
+{% endmacro %}
+
+{% macro snowflake__month_year_from_date(date_column) %}
+    to_char({{ date_column }}, 'MM-YYYY')
+{% endmacro %}
+
+
 --quarter
 {% macro quarter_from_date(date_column) %}
     {{ return(adapter.dispatch('quarter_from_date')(date_column)) }}

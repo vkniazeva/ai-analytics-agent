@@ -48,7 +48,7 @@ dimensions:
     time: true
 
   month_year:
-    select: "LPAD(dd.month::text, 2, '0') || '-' || dd.year::text"
+    select: "dd.month_year"
     requires: [dim_flights, dim_date]
     time: true
     sort_select: "dd.year * 100 + dd.month"

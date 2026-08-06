@@ -1,7 +1,7 @@
 import pytest
 
 from ai_analytics_agent.tools.query_engine import _validate_args, _build_metric_sql, _resolve_joins, _build_where, \
-    _build_order, _build_auto_time_order
+    _build_order, _build_auto_time_order, _extra_group_by_for_time_order
 from ai_analytics_agent.utils.config_handler import SALES_METRIC, ROW_LIMIT
 
 from ai_analytics_agent.utils.exceptions import ValidationError
@@ -170,4 +170,28 @@ def test_build_auto_time_order_empty_when_no_time_dims(semantic_layer):
 
 def test_build_auto_time_order_empty_when_group_by_none(semantic_layer):
     assert _build_auto_time_order(semantic_layer, group_by=None) == ""
+
+
+def test_extra_group_by_adds_sort_select_for_month_year(semantic_layer):
+    existing_columns = ["dd.month_year"]
+    result = _extra_group_by_for_time_order(semantic_layer, ["month_year"], existing_columns)
+    assert result == ["dd.year * 100 + dd.month"]
+
+
+def test_extra_group_by_skips_time_dims_without_sort_select(semantic_layer):
+    semantic_layer["dimensions"]["year"]["time"] = True
+    existing_columns = ["dd.year"]
+    result = _extra_group_by_for_time_order(semantic_layer, ["year"], existing_columns)
+    assert result == []
+
+
+def test_extra_group_by_skips_non_time_dims(semantic_layer):
+    result = _extra_group_by_for_time_order(semantic_layer, ["flight_number"], ["df.flight_number"])
+    assert result == []
+
+
+def test_extra_group_by_no_duplicates(semantic_layer):
+    existing_columns = ["dd.month_year", "dd.year * 100 + dd.month"]
+    result = _extra_group_by_for_time_order(semantic_layer, ["month_year"], existing_columns)
+    assert result == []
 
