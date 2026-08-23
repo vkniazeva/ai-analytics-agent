@@ -33,3 +33,6 @@ logs/dbt.log
 .DS_Store
 /.idea/copilot.data.migration.agent.xml
 /.idea/sqldialects.xml
+
+#assist
+docs/superpowers

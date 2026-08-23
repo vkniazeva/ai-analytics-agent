@@ -73,3 +73,18 @@ def test_call_llm_calls_ollama_chat_with_expected_args(mock_ollama):
         model="gemma4", messages=messages, tools=tools, think=False, options={"temperature": 0.2}
     )
     assert result == {"role": "assistant", "content": "hi"}
+
+
+@patch.dict("os.environ", {"LLM_PROVIDER": "bedrock", "BEDROCK_MODEL_ID": "anthropic.claude-haiku-4-5-v1:0"})
+@patch("ai_analytics_agent.llm.bedrock_provider.call_llm")
+def test_call_llm_dispatches_to_bedrock_when_env_var_set(mock_bedrock_call_llm):
+    mock_bedrock_call_llm.return_value = {"role": "assistant", "content": "hi", "tool_calls": None}
+    messages = [{"role": "user", "content": "hi"}]
+    tools = [{"type": "function", "function": {"name": "get_sales_metric"}}]
+
+    result = call_llm(messages, tools=tools)
+
+    mock_bedrock_call_llm.assert_called_once_with(
+        messages, tools, model="anthropic.claude-haiku-4-5-v1:0", options=None
+    )
+    assert result == {"role": "assistant", "content": "hi", "tool_calls": None}

@@ -1,4 +1,5 @@
 import json
+import os
 import logging
 
 from ai_analytics_agent.utils.config_handler import get_semantic_layer, ROW_LIMIT, SALES_METRIC, WASTAGE_METRIC, \
@@ -101,7 +102,14 @@ def _build_tool_schema(domain: str, function_name: str, description: str) -> dic
 def has_tool_calls(message) -> bool:
     return bool(message.get("tool_calls"))
 
+
 def call_llm(messages, tools, model=MODEL, options=None):
+    if os.environ.get("LLM_PROVIDER", "ollama") == "bedrock":
+        from ai_analytics_agent.llm import bedrock_provider
+        return bedrock_provider.call_llm(
+            messages, tools, model=os.environ["BEDROCK_MODEL_ID"], options=options
+        )
+
     response = ollama.chat(model=model, messages=messages, tools=tools, think=False, options=options)
     return response["message"]
 
