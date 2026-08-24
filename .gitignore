@@ -36,3 +36,6 @@ logs/dbt.log
 
 #assist
 docs/superpowers
+
+#htpasswd
+services/gateway/.htpasswd

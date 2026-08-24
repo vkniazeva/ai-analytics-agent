@@ -98,7 +98,7 @@ def _process_regression(items_df: pd.DataFrame, regressor: CatBoostRegressor,
 
 def _get_estimated_accuracy(item_id: str) -> float:
     query = f"""
-        SELECT mi.accurate::float / NULLIF(mi.accurate + mi.waste + mi.lost_sale, 0) as estimated_accuracy
+        SELECT mi.accuracy_score as estimated_accuracy
         FROM forecasting.model_metrics_by_item mi
         JOIN forecasting.model_runs mr ON mi.run_id = mr.run_id
         WHERE mi.item_id = '{item_id}'

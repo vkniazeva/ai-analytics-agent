@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS forecasting.model_metrics_by_item (
     item_id VARCHAR,
     accurate INTEGER,
     waste INTEGER,
-    lost_sale INTEGER
+    lost_sale INTEGER,
+    accuracy_score FLOAT
 );
 
 CREATE TABLE IF NOT EXISTS forecasting.feature_importance (

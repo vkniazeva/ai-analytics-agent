@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+.git
+.idea
+.pytest_cache
+node_modules
+data
+catboost_info
+logs

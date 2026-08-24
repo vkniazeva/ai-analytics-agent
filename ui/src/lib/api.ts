@@ -6,8 +6,8 @@ import type {
   ThresholdType,
 } from '../types/forecasting'
 
-const ANALYTICS_API_BASE = 'http://localhost:8001'
-const FORECASTING_API_BASE = 'http://localhost:8000'
+const ANALYTICS_API_BASE = import.meta.env.VITE_ANALYTICS_API_BASE ?? 'http://localhost:8001'
+const FORECASTING_API_BASE = import.meta.env.VITE_FORECASTING_API_BASE ?? 'http://localhost:8000'
 
 async function parseJsonOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
