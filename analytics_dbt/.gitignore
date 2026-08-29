@@ -2,3 +2,6 @@
 target/
 dbt_packages/
 logs/
+
+# Anonymization mapping - contains real product references
+seeds/product_id_mapping.csv

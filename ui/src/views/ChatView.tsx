@@ -5,12 +5,6 @@ import { MessageBlocks } from '../components/chat/MessageBlocks'
 import { useChatStore } from '../lib/chatStore'
 import { blocksFromMessage } from '../types/chatBlocks'
 
-const SUGGESTIONS = [
-  'Which items sell out most often on morning flights?',
-  'Compare LHR-JFK with FRA-JFK basket size',
-  'Chart waste by catering station',
-]
-
 const MAX_TEXTAREA_HEIGHT = 120
 
 function TypingIndicator() {
@@ -109,20 +103,6 @@ export function ChatView() {
         }}
       >
         <div className="mx-auto flex max-w-[920px] flex-col gap-2.5">
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => submit(s)}
-                disabled={loading}
-                className="rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-white px-3.5 py-[7px] text-[12.5px] font-medium text-[var(--text-body)] transition-colors hover:border-purple-main hover:text-purple-main disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
           <div className="flex items-end gap-2.5 rounded-[var(--radius-lg)] border-[1.5px] border-[var(--border-subtle)] bg-white p-2.5 pl-4 shadow-[var(--shadow-sm)]">
             <Database size={21} className="mb-2 shrink-0 text-[var(--text-faint)]" />
             <textarea

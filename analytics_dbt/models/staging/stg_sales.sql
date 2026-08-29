@@ -7,6 +7,9 @@ cities as (
 currencies as (
     select * from {{ ref('currency_mapping') }}
 ),
+mapping as (
+    select * from {{ ref('product_id_mapping') }}
+),
 {#  using aggregation to sum up by ticket_id & sales_type & item_reference  #}
 renamed as (
     select
@@ -19,7 +22,7 @@ renamed as (
         "Ticket ID" as slip_id,
         "Sales Type" as sales_type,
         "Item Category" as item_category,
-        "Item Reference" as item_id,
+        "Item Reference" as original_item_id,
         "Currency" as currency,
         "Item Price" as price,
         "Qty Sold" as sold_quantity,
@@ -38,7 +41,7 @@ renamed as (
         r.slip_id as slip_id,
         r.sales_type as sales_type,
         coalesce(cur.currency_id, 'UNKNOWN') as currency,
-        r.item_id as item_id,
+        m.anonymized_reference as item_id,
         coalesce(r.item_category, 'UNKNOWN') as item_category,
         coalesce(r.price, 0)::decimal as price,
         r.sold_quantity::int as sold_quantity,
@@ -48,6 +51,7 @@ renamed as (
     left join cities as co on co.iata_code = r.origin
     left join cities as cd on cd.iata_code = r.destination
     left join currencies cur on r.currency = cur.currency_code
+    inner join mapping m on r.original_item_id::text = m.original_reference
 ), cleaned as (
     select distinct *
     from transformed

@@ -1,6 +1,5 @@
-import { MessageSquare, LineChart, Share2 } from 'lucide-react'
+import { MessageSquare, LineChart } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Button } from './Button'
 import { Tabs } from './Tabs'
 import { MODULES, moduleForPath } from '../lib/modules'
 
@@ -24,11 +23,6 @@ export function Header() {
           <p className="mt-[5px] max-w-[640px] text-[13.5px] text-[var(--text-muted)]" style={{ textWrap: 'pretty' }}>
             {activeModule.subtitle}
           </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 pb-2">
-          <Button variant="outline" size="sm" icon={<Share2 size={16} />}>
-            Export
-          </Button>
         </div>
       </div>
 

@@ -1,6 +1,5 @@
 import {
   ChevronRight,
-  Download,
   MousePointerClick,
   PlaneLanding,
   PlaneTakeoff,
@@ -41,18 +40,6 @@ function accuracyDotColor(accuracy: number | null): string {
   if (accuracy >= 0.85) return 'var(--green-main)'
   if (accuracy >= 0.75) return 'var(--purple-main)'
   return 'var(--warning-500)'
-}
-
-function downloadCsv(rows: PredictItem[]) {
-  const header = 'item_id,predicted_quantity'
-  const body = rows.map((r) => `${r.item_id},${r.predicted_quantity}`).join('\n')
-  const blob = new Blob([`${header}\n${body}`], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'forecast.csv'
-  a.click()
-  URL.revokeObjectURL(url)
 }
 
 export function ForecastingView() {
@@ -277,14 +264,6 @@ export function ForecastingView() {
                 {results.length} items - {totalUnits} units in total
               </span>
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={<Download size={14} />}
-                  onClick={() => downloadCsv(results)}
-                >
-                  CSV
-                </Button>
                 <Button
                   variant="secondary"
                   size="sm"

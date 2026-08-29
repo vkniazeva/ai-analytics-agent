@@ -42,6 +42,7 @@ dimensions:
   am_pm: {select: "mfs.am_pm", requires: []}
   is_night: {select: "mfs.is_night", requires: []}
   flight_number: {select: "mfs.flight_number", requires: []}
+  item_id: {select: "mfs.item_id", requires: []}
   product_id: {select: "mfs.item_id", requires: []}
   product_category: {select: "mfs.category", requires: []}
 

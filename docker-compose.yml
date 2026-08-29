@@ -50,6 +50,8 @@ services:
       context: .
       dockerfile: ai_analytics_agent/Dockerfile
     container_name: ai_analytics_agent
+    ports:
+      - "8001:8001"
     environment:
       AGENT_DB_HOST: postgres
       AGENT_DB_PORT: "5432"

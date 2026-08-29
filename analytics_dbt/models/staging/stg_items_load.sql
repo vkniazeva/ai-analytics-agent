@@ -2,24 +2,28 @@ with source as (
     select *
     from {{source('raw', 'orders')}}
 ),
+mapping as (
+    select * from {{ref('product_id_mapping')}}
+),
 renamed as (
     select
           "flight_number" as flight_no,
           "departure_date" as date,
           "order_num" as load_id,
-          "item_reference" as item_id,
+          "item_reference" as original_item_id,
           "total_qty_loaded" as total_loaded_quantity
     from source
 ),
 transformed as (
     select
-        'AB' || substring(flight_no from 3) as flight_no,
-        to_date(split_part(date, ' ', 1), 'YYYY/MM/DD') as date,
-        split_part(date, ' ', 2)::time as time,
-        load_id as load_id,
-        item_id as item_id,
-        total_loaded_quantity as total_loaded_quantity
-    from renamed
+        'AB' || substring(r.flight_no from 3) as flight_no,
+        to_date(split_part(r.date, ' ', 1), 'YYYY/MM/DD') as date,
+        split_part(r.date, ' ', 2)::time as time,
+        r.load_id as load_id,
+        m.anonymized_reference as item_id,
+        r.total_loaded_quantity as total_loaded_quantity
+    from renamed r
+    inner join mapping m on r.original_item_id::text = m.original_reference
 ),
 cleaned as (
     select distinct *

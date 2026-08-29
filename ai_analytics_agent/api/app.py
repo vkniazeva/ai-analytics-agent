@@ -1,10 +1,17 @@
 import uuid
+import logging
 
 from fastapi import FastAPI
 from ai_analytics_agent.api.schemas import AskRequest, AskResponse
 from ai_analytics_agent.llm.agent_loop import run_agent
 from ai_analytics_agent.tools.chart_builder import build_chart_spec
 from fastapi.middleware.cors import CORSMiddleware
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = FastAPI()
 
