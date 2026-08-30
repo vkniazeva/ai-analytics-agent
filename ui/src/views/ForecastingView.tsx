@@ -42,6 +42,40 @@ function accuracyDotColor(accuracy: number | null): string {
   return 'var(--warning-500)'
 }
 
+function riskColor(probability: number | null): {
+  bg: string
+  border: string
+  ink: string
+} {
+  if (probability === null)
+    return {
+      bg: 'var(--color-200)',
+      border: 'var(--border-subtle)',
+      ink: 'var(--text-muted)',
+    }
+  if (probability < 0.1)
+    return {
+      bg: 'color-mix(in srgb, var(--green-main) 12%, transparent)',
+      border: 'color-mix(in srgb, var(--green-main) 35%, transparent)',
+      ink: 'var(--green-main)',
+    }
+  if (probability < 0.25)
+    return {
+      bg: 'color-mix(in srgb, var(--warning-500) 12%, transparent)',
+      border: 'color-mix(in srgb, var(--warning-500) 35%, transparent)',
+      ink: 'var(--warning-500)',
+    }
+  return {
+    bg: 'color-mix(in srgb, var(--danger-500) 12%, transparent)',
+    border: 'color-mix(in srgb, var(--danger-500) 35%, transparent)',
+    ink: 'var(--danger-500)',
+  }
+}
+
+function formatPercent(value: number | null): string {
+  return value === null ? '—' : `${Math.round(value * 100)}%`
+}
+
 export function ForecastingView() {
   const [origin, setOrigin] = useState('city_001')
   const [destination, setDestination] = useState('city_029')
@@ -314,7 +348,7 @@ export function ForecastingView() {
                       Predicted quantity
                     </div>
                     <div className="text-[46px] font-bold tracking-[-0.03em]">
-                      {detail.predicted_quantity}
+                      {detail.predicted_value ?? detail.predicted_quantity}
                     </div>
                     <div className="text-[12.5px] text-white/60">
                       units to load
@@ -323,9 +357,14 @@ export function ForecastingView() {
                   <div className="text-right">
                     <div className="text-[11.5px] text-white/55">
                       Historical average
+                      {detail.hist_level_description && (
+                        <span className="ml-1 text-white/40">
+                          ({detail.hist_level_description})
+                        </span>
+                      )}
                     </div>
                     <div className="text-[22px] font-bold">
-                      {detail.historical_average}
+                      {detail.hist_avg ?? detail.historical_average}
                     </div>
                     {detail.estimated_accuracy !== null && (
                       <div className="mt-1.5 inline-flex items-center gap-[7px] rounded-[var(--radius-pill)] bg-white/12 px-2.5 py-1 text-[11.5px] font-semibold">
@@ -347,16 +386,69 @@ export function ForecastingView() {
 
               <div>
                 <div className="mb-2 text-[11.5px] font-bold uppercase text-[var(--text-muted)]">
-                  Model output
+                  Risk signals
                 </div>
-                <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+                <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  {(
+                    [
+                      ['Missed sale probability', detail.missed_sale_probability],
+                      ['Wastage probability', detail.wastage_probability],
+                    ] as const
+                  ).map(([label, value]) => {
+                    const c = riskColor(value)
+                    return (
+                      <div
+                        key={label}
+                        className="rounded-[var(--radius-md)] p-[14px]"
+                        style={{ backgroundColor: c.bg, border: `1px solid ${c.border}` }}
+                      >
+                        <div className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[var(--text-muted)]">
+                          {label}
+                        </div>
+                        <div
+                          className="mt-1 text-[28px] font-bold tabular-nums"
+                          style={{ color: c.ink }}
+                        >
+                          {formatPercent(value)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {detail.sample_size !== null && (
+                  <div className="mt-2 text-[12px] text-[var(--text-muted)]">
+                    Based on {detail.sample_size} historical records
+                    {detail.metrics_level_description &&
+                      ` (${detail.metrics_level_description})`}
+                    {detail.metrics_level_used !== null &&
+                      detail.metrics_level_used > 1 && (
+                        <span className="ml-1 text-[var(--warning-500)]">
+                          - fallback, more specific data insufficient
+                        </span>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              <details>
+                <summary className="cursor-pointer text-[11.5px] font-bold uppercase text-[var(--text-muted)]">
+                  Raw model output
+                </summary>
+                <div className="mt-2 overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
                   {(
                     [
                       ['item_id', detail.item_id],
                       ['threshold_type', detail.threshold_type],
-                      ['threshold_value', detail.threshold_value],
-                      ['predicted_quantity', detail.predicted_quantity],
-                      ['historical_average', detail.historical_average],
+                      ['threshold', detail.threshold ?? detail.threshold_value],
+                      ['predicted_value', detail.predicted_value ?? detail.predicted_quantity],
+                      ['hist_avg', detail.hist_avg ?? detail.historical_average],
+                      ['hist_level_used', detail.hist_level_used ?? '—'],
+                      ['hist_level_description', detail.hist_level_description ?? '—'],
+                      ['missed_sale_probability', formatPercent(detail.missed_sale_probability)],
+                      ['wastage_probability', formatPercent(detail.wastage_probability)],
+                      ['sample_size', detail.sample_size ?? '—'],
+                      ['metrics_level_used', detail.metrics_level_used ?? '—'],
+                      ['metrics_level_description', detail.metrics_level_description ?? '—'],
                       ['estimated_accuracy', detail.estimated_accuracy ?? '—'],
                     ] as const
                   ).map(([key, value], i) => (
@@ -373,7 +465,7 @@ export function ForecastingView() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
             </div>
           )}
         </div>

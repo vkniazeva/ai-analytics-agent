@@ -22,7 +22,7 @@ def create_valid_dataframe():
 
     return pd.DataFrame({
         'date': dates,
-        'item_id': (['T3L4D001', 'T3L4D002', 'C3L2W001'] * (n // 3 + 1))[:n],
+        'item_id': (['PROD_001', 'PROD_002', 'PROD_004'] * (n // 3 + 1))[:n],
         'route': (['city_001 _ city_003', 'city_002 _ city_004'] * (n // 2 + 1))[:n],
         'day_period': (['Morning', 'Day', 'Evening'] * (n // 3 + 1))[:n],
         'pax_bin': (['<100', '100 - 150'] * (n // 2 + 1))[:n],
@@ -38,16 +38,27 @@ def test_create_test_set_success():
     features = ['item_id', 'route', 'day_period', 'pax_bin', 'hist_avg']
     target = 'sold_quantity'
 
-    X_test, y_test_cls, y_test, item_ids = _create_test_set(df, weeks_split, features, target)
+    X_test, y_test_cls, y_test, item_ids, routes, pax_bins, day_periods = _create_test_set(df, weeks_split, features, target)
 
     # Check return types
     assert isinstance(X_test, pd.DataFrame)
     assert isinstance(y_test_cls, pd.Series)
     assert isinstance(y_test, pd.Series)
     assert isinstance(item_ids, pd.Series)
+    assert isinstance(routes, pd.Series)
+    assert isinstance(pax_bins, pd.Series)
+    assert isinstance(day_periods, pd.Series)
 
     # Check that all have same length
-    assert len(X_test) == len(y_test_cls) == len(y_test) == len(item_ids)
+    assert (
+        len(X_test)
+        == len(y_test_cls)
+        == len(y_test)
+        == len(item_ids)
+        == len(routes)
+        == len(pax_bins)
+        == len(day_periods)
+    )
 
     # Check that test set is not empty
     assert len(X_test) > 0
@@ -65,7 +76,7 @@ def test_create_test_set_correct_split():
     features = ['item_id', 'route']
     target = 'sold_quantity'
 
-    X_test, y_test_cls, y_test, item_ids = _create_test_set(df, weeks_split, features, target)
+    X_test, y_test_cls, y_test, item_ids, routes, pax_bins, day_periods = _create_test_set(df, weeks_split, features, target)
 
     # Check that test set contains only recent weeks
     cutoff_date = df["date"].max() - pd.Timedelta(weeks=weeks_split)
@@ -79,7 +90,7 @@ def test_create_test_set_binary_classification():
     features = ['item_id']
     target = 'sold_quantity'
 
-    X_test, y_test_cls, y_test, item_ids = _create_test_set(df, weeks_split, features, target)
+    X_test, y_test_cls, y_test, item_ids, routes, pax_bins, day_periods = _create_test_set(df, weeks_split, features, target)
 
     # y_test_cls should be 1 where sold_quantity > 0, and 0 otherwise
     test_df = df[df["date"] > (df["date"].max() - pd.Timedelta(weeks=weeks_split))].copy()
@@ -92,7 +103,7 @@ def test_create_test_set_binary_classification():
 def test_evaluate_classifier_success():
     np.random.seed(42)
     X_test = pd.DataFrame({
-        'item_id': ['T3L4D001'] * 100,
+        'item_id': ['PROD_001'] * 100,
         'route': ['city_001 _ city_003'] * 100
     })
     y_test_cls = pd.Series([0, 1] * 50)
@@ -121,7 +132,7 @@ def test_evaluate_classifier_success():
 
 
 def test_evaluate_classifier_perfect_predictions():
-    X_test = pd.DataFrame({'item_id': ['T3L4D001'] * 100})
+    X_test = pd.DataFrame({'item_id': ['PROD_001'] * 100})
     y_test_cls = pd.Series([0, 1] * 50)
 
     # Mock classifier that predicts perfectly
@@ -141,7 +152,7 @@ def test_evaluate_classifier_perfect_predictions():
 
 
 def test_evaluate_classifier_different_thresholds():
-    X_test = pd.DataFrame({'item_id': ['T3L4D001'] * 100})
+    X_test = pd.DataFrame({'item_id': ['PROD_001'] * 100})
     y_test_cls = pd.Series([1] * 100)
 
     # Mock classifier
@@ -165,7 +176,7 @@ def test_evaluate_classifier_different_thresholds():
 def test_evaluate_regressor_success():
     np.random.seed(42)
     X_test = pd.DataFrame({
-        'item_id': ['T3L4D001'] * 100,
+        'item_id': ['PROD_001'] * 100,
         'route': ['city_001 _ city_003'] * 100
     })
     y_test = pd.Series(np.random.randint(0, 10, 100))
@@ -197,7 +208,7 @@ def test_evaluate_regressor_success():
 
 
 def test_evaluate_regressor_predicted_non_negative():
-    X_test = pd.DataFrame({'item_id': ['T3L4D001'] * 10})
+    X_test = pd.DataFrame({'item_id': ['PROD_001'] * 10})
     y_test = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     # Mock models
@@ -218,7 +229,7 @@ def test_evaluate_regressor_predicted_non_negative():
 
 
 def test_evaluate_regressor_classifier_zeros():
-    X_test = pd.DataFrame({'item_id': ['T3L4D001'] * 10})
+    X_test = pd.DataFrame({'item_id': ['PROD_001'] * 10})
     y_test = pd.Series([5] * 10)
 
     # Mock classifier that predicts all zeros
@@ -239,7 +250,7 @@ def test_evaluate_regressor_classifier_zeros():
 
 
 def test_evaluate_regressor_integer_predictions():
-    X_test = pd.DataFrame({'item_id': ['T3L4D001'] * 10})
+    X_test = pd.DataFrame({'item_id': ['PROD_001'] * 10})
     y_test = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     # Mock models
@@ -406,25 +417,36 @@ def test_evaluate_business_metrics_accuracy_score_partial_credit():
 
 
 # Test _evaluate_business_metrics_by_item
+def _mk_dims(n, route='route_a', pax_bin='<100', day_period='Morning'):
+    return (
+        pd.Series([route] * n),
+        pd.Series([pax_bin] * n),
+        pd.Series([day_period] * n),
+    )
+
+
 def test_evaluate_business_metrics_by_item_success():
     results_df = pd.DataFrame({
         'fact': [1, 2, 3, 1, 2, 3],
         'predicted': [1, 3, 2, 2, 2, 4]
     })
-    item_ids = pd.Series(['T3L4D001', 'T3L4D001', 'T3L4D001', 'T3L4D002', 'T3L4D002', 'T3L4D002'])
+    item_ids = pd.Series(['PROD_001'] * 3 + ['PROD_002'] * 3)
+    routes, pax_bins, day_periods = _mk_dims(6)
 
-    by_item = _evaluate_business_metrics_by_item(results_df, item_ids)
+    by_item = _evaluate_business_metrics_by_item(
+        results_df, item_ids, routes, pax_bins, day_periods, min_samples=1
+    )
 
     # Check structure
-    assert 'item_id' in by_item.columns
-    assert 'accurate' in by_item.columns
-    assert 'waste' in by_item.columns
-    assert 'lost_sale' in by_item.columns
-    assert 'accuracy_score' in by_item.columns
+    for col in ['item_id', 'route', 'pax_bin', 'day_period', 'metrics_level',
+                'total_records', 'accurate', 'waste', 'lost_sale',
+                'waste_share', 'lost_sale_share', 'accuracy_score']:
+        assert col in by_item.columns
 
-    # Check that we have 2 items
-    assert len(by_item) == 2
-    assert set(by_item['item_id']) == {'T3L4D001', 'T3L4D002'}
+    # All 4 levels present for each item (since min_samples=1)
+    for item in ['PROD_001', 'PROD_002']:
+        item_rows = by_item[by_item['item_id'] == item]
+        assert set(item_rows['metrics_level']) == {1, 2, 3, 4}
 
 
 def test_evaluate_business_metrics_by_item_correct_counts():
@@ -432,37 +454,43 @@ def test_evaluate_business_metrics_by_item_correct_counts():
         'fact': [5, 5, 5],
         'predicted': [5, 6, 4]
     })
-    item_ids = pd.Series(['T3L4D001', 'T3L4D001', 'T3L4D001'])
+    item_ids = pd.Series(['PROD_001'] * 3)
+    routes, pax_bins, day_periods = _mk_dims(3)
 
-    by_item = _evaluate_business_metrics_by_item(results_df, item_ids)
+    by_item = _evaluate_business_metrics_by_item(
+        results_df, item_ids, routes, pax_bins, day_periods, min_samples=1
+    )
 
-    # For T3L4D001: 1 accurate, 1 waste, 1 lost_sale
-    item_row = by_item[by_item['item_id'] == 'T3L4D001'].iloc[0]
+    # L4 (item overall) row: 1 accurate, 1 waste, 1 lost_sale
+    item_row = by_item[(by_item['item_id'] == 'PROD_001') & (by_item['metrics_level'] == 4)].iloc[0]
     assert item_row['accurate'] == 1
     assert item_row['waste'] == 1
     assert item_row['lost_sale'] == 1
+    assert item_row['total_records'] == 3
+    assert item_row['waste_share'] == round(1/3, 3)
+    assert item_row['lost_sale_share'] == round(1/3, 3)
 
 
-def test_evaluate_business_metrics_by_item_multiple_items():
+def test_evaluate_business_metrics_by_item_route_fallback_below_threshold():
     results_df = pd.DataFrame({
-        'fact': [1, 1, 2, 2],
-        'predicted': [1, 2, 2, 1]
+        'fact': [1, 2, 3, 4, 5, 6],
+        'predicted': [1, 2, 3, 4, 5, 6]
     })
-    item_ids = pd.Series(['T3L4D001', 'T3L4D001', 'T3L4D002', 'T3L4D002'])
+    item_ids = pd.Series(['PROD_001'] * 6)
+    # 5 records on route_a (>= threshold), 1 record on route_b (< threshold, dropped from L3)
+    routes = pd.Series(['route_a'] * 5 + ['route_b'])
+    pax_bins = pd.Series(['<100'] * 6)
+    day_periods = pd.Series(['Morning'] * 6)
 
-    by_item = _evaluate_business_metrics_by_item(results_df, item_ids)
+    by_item = _evaluate_business_metrics_by_item(
+        results_df, item_ids, routes, pax_bins, day_periods, min_samples=5
+    )
 
-    # T3L4D001: 1 accurate, 1 waste, 0 lost_sale
-    item1 = by_item[by_item['item_id'] == 'T3L4D001'].iloc[0]
-    assert item1['accurate'] == 1
-    assert item1['waste'] == 1
-    assert item1['lost_sale'] == 0
-
-    # T3L4D002: 1 accurate, 0 waste, 1 lost_sale
-    item2 = by_item[by_item['item_id'] == 'T3L4D002'].iloc[0]
-    assert item2['accurate'] == 1
-    assert item2['waste'] == 0
-    assert item2['lost_sale'] == 1
+    # L3 rows must have route_a only (route_b has < 5 records)
+    l3_rows = by_item[by_item['metrics_level'] == 3]
+    assert set(l3_rows['route']) == {'route_a'}
+    # L4 (item overall) always present
+    assert (by_item['metrics_level'] == 4).sum() == 1
 
 
 def test_evaluate_business_metrics_by_item_accuracy_score_is_averaged():
@@ -470,16 +498,19 @@ def test_evaluate_business_metrics_by_item_accuracy_score_is_averaged():
         'fact': [2, 5, 5, 5],
         'predicted': [1, 5, 6, 4]
     })
-    item_ids = pd.Series(['T3L4D001', 'T3L4D001', 'T3L4D002', 'T3L4D002'])
+    item_ids = pd.Series(['PROD_001', 'PROD_001', 'PROD_002', 'PROD_002'])
+    routes, pax_bins, day_periods = _mk_dims(4)
 
-    by_item = _evaluate_business_metrics_by_item(results_df, item_ids)
+    by_item = _evaluate_business_metrics_by_item(
+        results_df, item_ids, routes, pax_bins, day_periods, min_samples=1
+    )
 
-    # T3L4D001: scores [0.5, 1.0] -> mean 0.75
-    item1 = by_item[by_item['item_id'] == 'T3L4D001'].iloc[0]
+    # PROD_001 L4 (item overall): scores [0.5, 1.0] -> mean 0.75
+    item1 = by_item[(by_item['item_id'] == 'PROD_001') & (by_item['metrics_level'] == 4)].iloc[0]
     assert item1['accuracy_score'] == 0.75
 
-    # T3L4D002: scores [5/6, 4/5] -> mean rounded to 2 decimals
-    item2 = by_item[by_item['item_id'] == 'T3L4D002'].iloc[0]
+    # PROD_002 L4: scores [5/6, 4/5] -> mean rounded to 2 decimals
+    item2 = by_item[(by_item['item_id'] == 'PROD_002') & (by_item['metrics_level'] == 4)].iloc[0]
     assert item2['accuracy_score'] == round((5/6 + 4/5) / 2, 2)
 
 

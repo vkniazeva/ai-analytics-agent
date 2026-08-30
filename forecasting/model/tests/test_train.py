@@ -141,7 +141,9 @@ def test_train_classifier_returns_model():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'Logloss',
+        'eval_metric': 'F1'
     }
 
     classifier = _train_classifier(df, classifier_config, features, target, cat_features)
@@ -166,7 +168,9 @@ def test_train_classifier_binary_target():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'Logloss',
+        'eval_metric': 'F1'
     }
 
     classifier = _train_classifier(df, classifier_config, features, target, cat_features)
@@ -190,7 +194,9 @@ def test_train_classifier_with_mostly_zeros():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'Logloss',
+        'eval_metric': 'F1'
     }
 
     classifier = _train_classifier(df, classifier_config, features, target, cat_features)
@@ -216,7 +222,9 @@ def test_train_classifier_with_mostly_nonzeros():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'Logloss',
+        'eval_metric': 'F1'
     }
 
     classifier = _train_classifier(df, classifier_config, features, target, cat_features)
@@ -241,7 +249,9 @@ def test_train_regression_returns_model():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'MAE',
+        'eval_metric': 'MAE'
     }
 
     regressor = _train_regression(df, regressor_config, features, target, cat_features)
@@ -268,7 +278,9 @@ def test_train_regression_filters_zeros():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'MAE',
+        'eval_metric': 'MAE'
     }
 
     regressor = _train_regression(df, regressor_config, features, target, cat_features)
@@ -290,7 +302,9 @@ def test_train_regression_positive_predictions():
         'iterations': 10,
         'learning_rate': 0.1,
         'depth': 4,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'MAE',
+        'eval_metric': 'MAE'
     }
 
     regressor = _train_regression(df, regressor_config, features, target, cat_features)
@@ -340,7 +354,9 @@ def test_train_classifier_minimal_config():
         'iterations': 5,  # Minimal iterations
         'learning_rate': 0.1,
         'depth': 2,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'Logloss',
+        'eval_metric': 'F1'
     }
 
     classifier = _train_classifier(df, classifier_config, features, target, cat_features)
@@ -370,7 +386,9 @@ def test_train_regression_minimal_data():
         'iterations': 5,
         'learning_rate': 0.1,
         'depth': 2,
-        'random_seed': 42
+        'random_seed': 42,
+        'loss_function': 'MAE',
+        'eval_metric': 'MAE'
     }
 
     regressor = _train_regression(df, regressor_config, features, target, cat_features)

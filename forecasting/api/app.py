@@ -66,7 +66,7 @@ def _prepare_data(route: str, day_period: str, expected_pax: int) -> pd.DataFram
         "day_period": day_period
     })
     items_df = items_df.merge(
-        hist_avg[["item_id", "route", "day_period", "hist_avg"]],
+        hist_avg[["item_id", "route", "day_period", "hist_avg", "hist_level_used"]],
         on=["item_id", "route", "day_period"],
         how="left"
     )
@@ -109,6 +109,54 @@ def _get_estimated_accuracy(item_id: str) -> float:
     return float(result["estimated_accuracy"].iloc[0]) if len(result) > 0 else None
 
 
+def _get_item_metrics(item_id: str, route: str, pax_bin: str, day_period: str) -> dict:
+    """Fetch per-item metrics from the latest run using hierarchical fallback.
+
+    Level order (most specific first):
+      L1: item + route + pax_bin + day_period
+      L2: item + route + day_period
+      L3: item + route
+      L4: item overall
+    """
+    base_select = (
+        "SELECT mi.total_records, mi.waste_share, mi.lost_sale_share, mi.accuracy_score "
+        "FROM forecasting.model_metrics_by_item mi "
+        "WHERE mi.run_id = (SELECT MAX(run_id) FROM forecasting.model_metrics_by_item) "
+        f"AND mi.item_id = '{item_id}'"
+    )
+    level_queries = [
+        (1, f"{base_select} AND mi.route = '{route}' AND mi.pax_bin = '{pax_bin}' "
+            f"AND mi.day_period = '{day_period}' AND mi.metrics_level = 1 LIMIT 1"),
+        (2, f"{base_select} AND mi.route = '{route}' AND mi.day_period = '{day_period}' "
+            "AND mi.metrics_level = 2 LIMIT 1"),
+        (3, f"{base_select} AND mi.route = '{route}' AND mi.metrics_level = 3 LIMIT 1"),
+        (4, f"{base_select} AND mi.metrics_level = 4 LIMIT 1"),
+    ]
+
+    for level, query in level_queries:
+        result = read_sql(query, "model_metrics_by_item")
+        if len(result) > 0:
+            row = result.iloc[0]
+            description = config["model"]["metrics_level_descriptions"].get(level)
+            return {
+                "missed_sale_probability": float(row["lost_sale_share"]),
+                "wastage_probability": float(row["waste_share"]),
+                "sample_size": int(row["total_records"]),
+                "metrics_level_used": level,
+                "metrics_level_description": description,
+                "estimated_accuracy": float(row["accuracy_score"]),
+            }
+
+    return {
+        "missed_sale_probability": None,
+        "wastage_probability": None,
+        "sample_size": None,
+        "metrics_level_used": None,
+        "metrics_level_description": None,
+        "estimated_accuracy": None,
+    }
+
+
 # --- endpoints ---
 
 FEATURES = ["item_id", "route", "pax_bin", "day_period", "hist_avg"]
@@ -144,16 +192,40 @@ def predict_item(threshold_type: ThresholdType, item_id: str,
     result_df = _process_regression(single_item_df, regressor, FEATURES)
 
     row = result_df.iloc[0]
+    predicted_value = int(row["predicted"])
+    threshold = config["model"]["catboost"][threshold_type]
+
     hist_avg_value = float(single_item_df["hist_avg"].iloc[0]) \
         if not single_item_df["hist_avg"].isna().all() else 0.0
+
+    raw_level = single_item_df["hist_level_used"].iloc[0]
+    hist_level_used = int(raw_level) if pd.notna(raw_level) else None
+    hist_level_description = (
+        config["model"]["hist_level_descriptions"].get(hist_level_used)
+        if hist_level_used is not None else None
+    )
+
+    pax_bin = single_item_df["pax_bin"].iloc[0]
+    day_period = single_item_df["day_period"].iloc[0]
+    metrics = _get_item_metrics(item_id, request.route, pax_bin, day_period)
 
     return PredictItemResponse(
         item_id=item_id,
         threshold_type=threshold_type,
-        threshold_value=config["model"]["catboost"][threshold_type],
-        predicted_quantity=int(row["predicted"]),
+        threshold_value=threshold,
+        predicted_quantity=predicted_value,
         historical_average=hist_avg_value,
-        estimated_accuracy=_get_estimated_accuracy(item_id)
+        estimated_accuracy=metrics["estimated_accuracy"],
+        predicted_value=predicted_value,
+        threshold=threshold,
+        hist_avg=hist_avg_value,
+        hist_level_used=hist_level_used,
+        hist_level_description=hist_level_description,
+        missed_sale_probability=metrics["missed_sale_probability"],
+        wastage_probability=metrics["wastage_probability"],
+        sample_size=metrics["sample_size"],
+        metrics_level_used=metrics["metrics_level_used"],
+        metrics_level_description=metrics["metrics_level_description"],
     )
 
 

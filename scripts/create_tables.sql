@@ -22,9 +22,16 @@ CREATE TABLE IF NOT EXISTS forecasting.model_metrics_by_item (
     id SERIAL PRIMARY KEY,
     run_id INTEGER REFERENCES forecasting.model_runs(run_id),
     item_id VARCHAR,
+    route VARCHAR,
+    pax_bin VARCHAR,
+    day_period VARCHAR,
+    metrics_level INTEGER,
+    total_records INTEGER,
     accurate INTEGER,
     waste INTEGER,
     lost_sale INTEGER,
+    waste_share FLOAT,
+    lost_sale_share FLOAT,
     accuracy_score FLOAT
 );
 

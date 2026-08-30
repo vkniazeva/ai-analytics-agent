@@ -26,7 +26,7 @@ def mock_config():
 @pytest.fixture
 def sample_dataframe():
     return pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'sold_quantity': [5, 3],
         'date': pd.to_datetime(['2025-01-01', '2025-01-02'])
     })
@@ -144,9 +144,9 @@ def test_run_pipeline_data_flow(mock_evaluate, mock_train, mock_validate,
     mock_config_fn.return_value = mock_config
 
     # Create different dataframes for each step to verify data flow
-    raw_df = pd.DataFrame({'item_id': ['T3L4D001']})
-    cleaned_df = pd.DataFrame({'item_id': ['T3L4D001'], 'cleaned': [True]})
-    featured_df = pd.DataFrame({'item_id': ['T3L4D001'], 'cleaned': [True], 'features': [1]})
+    raw_df = pd.DataFrame({'item_id': ['PROD_001']})
+    cleaned_df = pd.DataFrame({'item_id': ['PROD_001'], 'cleaned': [True]})
+    featured_df = pd.DataFrame({'item_id': ['PROD_001'], 'cleaned': [True], 'features': [1]})
 
     mock_source_instance = MagicMock()
     mock_source_instance.fetch.return_value = raw_df

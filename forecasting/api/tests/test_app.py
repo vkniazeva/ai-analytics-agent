@@ -71,7 +71,7 @@ def test_map_bins_edge_cases():
 @patch('forecasting.api.app.read_sql')
 def test_load_fresh_products_mock_mode(mock_read_sql):
     mock_read_sql.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'C3L2W001'],
+        'item_id': ['PROD_001', 'PROD_004'],
         'category': ['Beverages', 'Snacks']
     })
 
@@ -90,7 +90,7 @@ def test_load_fresh_products_mock_mode(mock_read_sql):
 @patch('forecasting.api.app.read_sql')
 def test_load_fresh_products_database_mode(mock_read_sql):
     mock_read_sql.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'category': ['Beverages']
     })
 
@@ -106,7 +106,7 @@ def test_load_fresh_products_database_mode(mock_read_sql):
 @patch('forecasting.api.app.read_sql')
 def test_load_hist_avg(mock_read_sql):
     mock_read_sql.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'route': ['city_001 _ city_029'],
         'day_period': ['Morning'],
         'hist_avg': [3.5]
@@ -124,14 +124,15 @@ def test_load_hist_avg(mock_read_sql):
 @patch('forecasting.api.app._load_fresh_products')
 def test_prepare_data_success(mock_load_products, mock_load_hist_avg):
     mock_load_products.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002', 'C3L2W001']
+        'item_id': ['PROD_001', 'PROD_002', 'PROD_004']
     })
 
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'route': ['city_001 _ city_029', 'city_001 _ city_029'],
         'day_period': ['Morning', 'Morning'],
-        'hist_avg': [3.5, 2.0]
+        'hist_avg': [3.5, 2.0],
+        'hist_level_used': [1, 1]
     })
 
     result = _prepare_data(
@@ -153,12 +154,13 @@ def test_prepare_data_success(mock_load_products, mock_load_hist_avg):
 @patch('forecasting.api.app._load_hist_avg')
 @patch('forecasting.api.app._load_fresh_products')
 def test_prepare_data_with_different_pax_bins(mock_load_products, mock_load_hist_avg):
-    mock_load_products.return_value = pd.DataFrame({'item_id': ['T3L4D001']})
+    mock_load_products.return_value = pd.DataFrame({'item_id': ['PROD_001']})
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'route': ['city_001 _ city_029'],
         'day_period': ['Morning'],
-        'hist_avg': [3.5]
+        'hist_avg': [3.5],
+        'hist_level_used': [1]
     })
 
     # Test different pax bins
@@ -175,7 +177,7 @@ def test_prepare_data_with_different_pax_bins(mock_load_products, mock_load_hist
 # Test _process_classification
 def test_process_classification_success():
     df = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002', 'T3L4D003'],
+        'item_id': ['PROD_001', 'PROD_002', 'PROD_003'],
         'route': ['city_001 _ city_029'] * 3,
         'pax_bin': ['<100'] * 3,
         'day_period': ['Morning'] * 3,
@@ -204,7 +206,7 @@ def test_process_classification_success():
 
 def test_process_classification_different_thresholds():
     df = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'route': ['city_001 _ city_029'],
         'pax_bin': ['<100'],
         'day_period': ['Morning'],
@@ -234,7 +236,7 @@ def test_process_classification_different_thresholds():
 # Test _process_regression
 def test_process_regression_success():
     df = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002', 'T3L4D003'],
+        'item_id': ['PROD_001', 'PROD_002', 'PROD_003'],
         'cls_predict': [1, 0, 1],
         'route': ['city_001 _ city_029'] * 3,
         'pax_bin': ['<100'] * 3,
@@ -252,15 +254,15 @@ def test_process_regression_success():
     assert 'predicted' in result.columns
     assert len(result) == 3
     # cls_predict=0 should have predicted=0
-    assert result[result['item_id'] == 'T3L4D002']['predicted'].iloc[0] == 0
+    assert result[result['item_id'] == 'PROD_002']['predicted'].iloc[0] == 0
     # cls_predict=1 should have predicted values (rounded)
-    assert result[result['item_id'] == 'T3L4D001']['predicted'].iloc[0] == 5
-    assert result[result['item_id'] == 'T3L4D003']['predicted'].iloc[0] == 8
+    assert result[result['item_id'] == 'PROD_001']['predicted'].iloc[0] == 5
+    assert result[result['item_id'] == 'PROD_003']['predicted'].iloc[0] == 8
 
 
 def test_process_regression_all_zeros():
     df = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'cls_predict': [0, 0],
         'route': ['city_001 _ city_029'] * 2,
         'pax_bin': ['<100'] * 2,
@@ -281,7 +283,7 @@ def test_process_regression_all_zeros():
 
 def test_process_regression_negative_predictions():
     df = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'cls_predict': [1],
         'route': ['city_001 _ city_029'],
         'pax_bin': ['<100'],
@@ -307,7 +309,7 @@ def test_get_estimated_accuracy_found(mock_read_sql):
         'estimated_accuracy': [0.85]
     })
 
-    result = _get_estimated_accuracy('T3L4D001')
+    result = _get_estimated_accuracy('PROD_001')
 
     assert result == 0.85
 
@@ -316,7 +318,7 @@ def test_get_estimated_accuracy_found(mock_read_sql):
 def test_get_estimated_accuracy_not_found(mock_read_sql):
     mock_read_sql.return_value = pd.DataFrame()
 
-    result = _get_estimated_accuracy('T3L4D001')
+    result = _get_estimated_accuracy('PROD_001')
 
     assert result is None
 
@@ -326,14 +328,15 @@ def test_get_estimated_accuracy_not_found(mock_read_sql):
 @patch('forecasting.api.app._load_fresh_products')
 def test_predict_all_items_endpoint(mock_load_products, mock_load_hist_avg, client):
     mock_load_products.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002']
+        'item_id': ['PROD_001', 'PROD_002']
     })
 
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'route': ['city_001 _ city_029'] * 2,
         'day_period': ['Morning'] * 2,
-        'hist_avg': [3.5, 2.0]
+        'hist_avg': [3.5, 2.0],
+        'hist_level_used': [1, 1]
     })
 
     # Mock models in app state
@@ -369,20 +372,28 @@ def test_predict_all_items_endpoint(mock_load_products, mock_load_hist_avg, clie
 
 @patch('forecasting.api.app._load_hist_avg')
 @patch('forecasting.api.app._load_fresh_products')
-@patch('forecasting.api.app._get_estimated_accuracy')
-def test_predict_item_endpoint(mock_get_accuracy, mock_load_products, mock_load_hist_avg, client):
+@patch('forecasting.api.app._get_item_metrics')
+def test_predict_item_endpoint(mock_get_metrics, mock_load_products, mock_load_hist_avg, client):
     mock_load_products.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002']
+        'item_id': ['PROD_001', 'PROD_002']
     })
 
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'route': ['city_001 _ city_029'] * 2,
         'day_period': ['Morning'] * 2,
-        'hist_avg': [3.5, 2.0]
+        'hist_avg': [3.5, 2.0],
+        'hist_level_used': [1, 2]
     })
 
-    mock_get_accuracy.return_value = 0.85
+    mock_get_metrics.return_value = {
+        "missed_sale_probability": 0.12,
+        "wastage_probability": 0.08,
+        "sample_size": 20,
+        "metrics_level_used": 1,
+        "metrics_level_description": "item + route + pax_bin + day_period",
+        "estimated_accuracy": 0.85,
+    }
 
     mock_classifier = MagicMock()
     mock_classifier.predict_proba.return_value = np.array([[0.3, 0.7]])
@@ -394,7 +405,7 @@ def test_predict_item_endpoint(mock_get_accuracy, mock_load_products, mock_load_
     app.state.regressor = mock_regressor
 
     response = client.post(
-        "/predict/low_missed_sales/item/T3L4D001",
+        "/predict/low_missed_sales/item/PROD_001",
         json={
             "route": "city_001 _ city_029",
             "expected_pax": 89,
@@ -404,26 +415,39 @@ def test_predict_item_endpoint(mock_get_accuracy, mock_load_products, mock_load_
 
     assert response.status_code == 200
     data = response.json()
-    assert data['item_id'] == 'T3L4D001'
+    assert data['item_id'] == 'PROD_001'
+    # Legacy fields (kept for backwards compatibility)
     assert 'predicted_quantity' in data
     assert 'threshold_type' in data
     assert 'threshold_value' in data
     assert 'historical_average' in data
     assert 'estimated_accuracy' in data
+    # New fields
+    assert data['predicted_value'] == data['predicted_quantity']
+    assert data['threshold'] == data['threshold_value']
+    assert data['hist_avg'] == data['historical_average']
+    assert data['hist_level_used'] == 1
+    assert data['hist_level_description'] == "item + route + day_period"
+    assert data['missed_sale_probability'] == 0.12
+    assert data['wastage_probability'] == 0.08
+    assert data['sample_size'] == 20
+    assert data['metrics_level_used'] == 1
+    assert data['metrics_level_description'] == "item + route + pax_bin + day_period"
 
 
 @patch('forecasting.api.app._load_hist_avg')
 @patch('forecasting.api.app._load_fresh_products')
 def test_predict_item_not_found(mock_load_products, mock_load_hist_avg, client):
     mock_load_products.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001']
+        'item_id': ['PROD_001']
     })
 
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'route': ['city_001 _ city_029'],
         'day_period': ['Morning'],
-        'hist_avg': [3.5]
+        'hist_avg': [3.5],
+        'hist_level_used': [1]
     })
 
     response = client.post(
@@ -443,15 +467,16 @@ def test_predict_item_not_found(mock_load_products, mock_load_hist_avg, client):
 @patch('forecasting.api.app._load_fresh_products')
 def test_predict_by_category_endpoint(mock_load_products, mock_load_hist_avg, client):
     mock_load_products.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002', 'C3L2W001'],
+        'item_id': ['PROD_001', 'PROD_002', 'PROD_004'],
         'category': ['Beverages', 'Beverages', 'Snacks']
     })
 
     mock_load_hist_avg.return_value = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002', 'C3L2W001'],
+        'item_id': ['PROD_001', 'PROD_002', 'PROD_004'],
         'route': ['city_001 _ city_029'] * 3,
         'day_period': ['Morning'] * 3,
-        'hist_avg': [3.5, 2.0, 1.5]
+        'hist_avg': [3.5, 2.0, 1.5],
+        'hist_level_used': [1, 1, 1]
     })
 
     mock_classifier = MagicMock()

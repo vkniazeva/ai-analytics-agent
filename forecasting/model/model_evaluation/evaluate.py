@@ -19,7 +19,10 @@ def _create_test_set(df: pd.DataFrame, weeks_split: int, features: list, target:
     y_test_cls = (test_df[target] > 0).astype(int)
     y_test = test_df[target]
     item_ids = test_df["item_id"].reset_index(drop=True)
-    return X_test, y_test_cls, y_test, item_ids
+    routes = test_df["route"].reset_index(drop=True)
+    pax_bins = test_df["pax_bin"].reset_index(drop=True)
+    day_periods = test_df["day_period"].reset_index(drop=True)
+    return X_test, y_test_cls, y_test, item_ids, routes, pax_bins, day_periods
 
 
 def _evaluate_classifier(X_test: pd.DataFrame, y_test_cls: pd.Series,
@@ -82,10 +85,31 @@ def _evaluate_business_metrics(results_df: pd.DataFrame) -> dict:
     }
 
 
+def _aggregate_by_group(results_df: pd.DataFrame, group_cols: list) -> pd.DataFrame:
+    grouped = results_df.groupby(group_cols).agg(
+        total_records=("fact", "size"),
+        accurate=("accurate", "sum"),
+        waste=("waste", "sum"),
+        lost_sale=("lost_sale", "sum"),
+        accuracy_score=("accuracy_score", "mean")
+    ).reset_index()
+    grouped["waste_share"] = (grouped["waste"] / grouped["total_records"]).round(3)
+    grouped["lost_sale_share"] = (grouped["lost_sale"] / grouped["total_records"]).round(3)
+    grouped["accuracy_score"] = grouped["accuracy_score"].round(2)
+    return grouped
+
+
 def _evaluate_business_metrics_by_item(results_df: pd.DataFrame,
-                                        item_ids: pd.Series) -> pd.DataFrame:
+                                        item_ids: pd.Series,
+                                        routes: pd.Series,
+                                        pax_bins: pd.Series,
+                                        day_periods: pd.Series,
+                                        min_samples: int) -> pd.DataFrame:
     results_df = results_df.copy()
     results_df["item_id"] = item_ids.values
+    results_df["route"] = routes.values
+    results_df["pax_bin"] = pax_bins.values
+    results_df["day_period"] = day_periods.values
     results_df["diff"] = results_df["predicted"] - results_df["fact"]
 
     results_df["accurate"] = (results_df["diff"] == 0).astype(int)
@@ -93,14 +117,32 @@ def _evaluate_business_metrics_by_item(results_df: pd.DataFrame,
     results_df["lost_sale"] = (results_df["diff"] < 0).astype(int)
     results_df["accuracy_score"] = _calculate_accuracy_score(results_df["fact"], results_df["predicted"])
 
-    by_item = results_df.groupby("item_id").agg(
-        accurate=("accurate", "sum"),
-        waste=("waste", "sum"),
-        lost_sale=("lost_sale", "sum"),
-        accuracy_score=("accuracy_score", "mean")
-    ).reset_index()
-    by_item["accuracy_score"] = by_item["accuracy_score"].round(2)
-    return by_item
+    # Hierarchical fallback levels (most specific to least specific).
+    # Only levels 1-3 respect min_samples; L4 is always kept as the ultimate fallback.
+    level_groups = [
+        (1, ["item_id", "route", "pax_bin", "day_period"], True),
+        (2, ["item_id", "route", "day_period"], True),
+        (3, ["item_id", "route"], True),
+        (4, ["item_id"], False),
+    ]
+    all_group_cols = ["item_id", "route", "pax_bin", "day_period"]
+
+    frames = []
+    for level, group_cols, apply_min_samples in level_groups:
+        grouped = _aggregate_by_group(results_df, group_cols)
+        if apply_min_samples:
+            grouped = grouped[grouped["total_records"] >= min_samples]
+        grouped["metrics_level"] = level
+        # Missing dims -> NULL so API can query unambiguously by (item, route, pax_bin, day_period, level).
+        for col in all_group_cols:
+            if col not in group_cols:
+                grouped[col] = None
+        frames.append(grouped)
+
+    columns = ["item_id", "route", "pax_bin", "day_period", "metrics_level",
+               "total_records", "accurate", "waste", "lost_sale",
+               "waste_share", "lost_sale_share", "accuracy_score"]
+    return pd.concat([f[columns] for f in frames], ignore_index=True)
 
 
 def _check_degradation(accuracy: float, degradation_threshold: float, table_name=None) -> tuple[bool, str]:
@@ -150,9 +192,12 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
     target = config["model"]["model_features"]["target"]
     features = cat_features + num_features
     degradation_threshold = config["model"]["degradation_threshold"]
+    min_samples_per_metrics_level = config["model"]["min_samples_per_metrics_level"]
 
     # test set
-    X_test, y_test_cls, y_test, item_ids = _create_test_set(df, weeks_split, features, target)
+    X_test, y_test_cls, y_test, item_ids, routes, pax_bins, day_periods = _create_test_set(
+        df, weeks_split, features, target
+    )
 
     # classifier
     precision, recall, f1, accuracy = _evaluate_classifier(X_test, y_test_cls, classifier, threshold)
@@ -162,7 +207,9 @@ def evaluate(df: pd.DataFrame, classifier: CatBoostClassifier,
 
     # business metrics
     business_metrics = _evaluate_business_metrics(reg_results_df)
-    business_metrics_by_item = _evaluate_business_metrics_by_item(reg_results_df, item_ids)
+    business_metrics_by_item = _evaluate_business_metrics_by_item(
+        reg_results_df, item_ids, routes, pax_bins, day_periods, min_samples_per_metrics_level
+    )
 
 
     # degradation check

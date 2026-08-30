@@ -35,6 +35,21 @@ data_preparation:
 model:
   degradation_threshold: 0.1
   test_split_by_weeks: 2
+  # Minimum test-set records for a metrics level to be stored.
+  # Below the threshold that level is skipped and API falls back to a coarser level.
+  min_samples_per_metrics_level: 5
+  # Human-readable descriptions of hist_avg fallback levels (feature_engineering.py)
+  hist_level_descriptions:
+    1: "item + route + day_period"
+    2: "item + route + is_night"
+    3: "item + day_period"
+    4: "item overall"
+  # Human-readable descriptions of per-item metrics fallback levels (evaluate.py)
+  metrics_level_descriptions:
+    1: "item + route + pax_bin + day_period"
+    2: "item + route + day_period"
+    3: "item + route"
+    4: "item overall"
   model_features:
     numerical: ["hist_avg"]
     categorical: ["item_id", "route", "day_period", "pax_bin"]
@@ -48,10 +63,14 @@ model:
       learning_rate: 0.05
       depth: 6
       random_seed: 42
+      loss_function: "Logloss"
+      eval_metric: "F1"
     regressor:
       iterations: 500
       learning_rate: 0.05
       depth: 6
       random_seed: 42
+      loss_function: "MAE"
+      eval_metric: "MAE"
 
 

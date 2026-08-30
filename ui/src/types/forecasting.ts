@@ -20,4 +20,14 @@ export interface PredictItemDetail {
   predicted_quantity: number
   historical_average: number
   estimated_accuracy: number | null
+  predicted_value: number
+  threshold: number
+  hist_avg: number
+  hist_level_used: number | null
+  hist_level_description: string | null
+  missed_sale_probability: number | null
+  wastage_probability: number | null
+  sample_size: number | null
+  metrics_level_used: number | null
+  metrics_level_description: string | null
 }

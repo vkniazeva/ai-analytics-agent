@@ -109,17 +109,17 @@ def test_predict_request_negative_pax():
 # Test PredictItemsResponse
 def test_predict_items_response_valid():
     response = PredictItemsResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         predicted_quantity=5
     )
 
-    assert response.item_id == "T3L4D001"
+    assert response.item_id == "PROD_001"
     assert response.predicted_quantity == 5
 
 
 def test_predict_items_response_zero_quantity():
     response = PredictItemsResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         predicted_quantity=0
     )
 
@@ -129,7 +129,7 @@ def test_predict_items_response_zero_quantity():
 def test_predict_items_response_missing_field():
     with pytest.raises(ValidationError) as exc_info:
         PredictItemsResponse(
-            item_id="T3L4D001"
+            item_id="PROD_001"
             # missing predicted_quantity
         )
 
@@ -140,7 +140,7 @@ def test_predict_items_response_missing_field():
 def test_predict_items_response_invalid_quantity_type():
     with pytest.raises(ValidationError):
         PredictItemsResponse(
-            item_id="T3L4D001",
+            item_id="PROD_001",
             predicted_quantity="invalid"  # Should be int
         )
 
@@ -148,42 +148,61 @@ def test_predict_items_response_invalid_quantity_type():
 # Test PredictItemResponse
 def test_predict_item_response_valid():
     response = PredictItemResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         threshold_type=ThresholdType.low_missed_sales,
         threshold_value=0.5,
         predicted_quantity=5,
         historical_average=3.5,
-        estimated_accuracy=0.85
+        estimated_accuracy=0.85,
+        predicted_value=5,
+        threshold=0.5,
+        hist_avg=3.5
     )
 
-    assert response.item_id == "T3L4D001"
+    assert response.item_id == "PROD_001"
     assert response.threshold_type == ThresholdType.low_missed_sales
     assert response.threshold_value == 0.5
     assert response.predicted_quantity == 5
     assert response.historical_average == 3.5
     assert response.estimated_accuracy == 0.85
+    assert response.predicted_value == 5
+    assert response.threshold == 0.5
+    assert response.hist_avg == 3.5
 
 
 def test_predict_item_response_optional_accuracy():
     response = PredictItemResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         threshold_type=ThresholdType.low_wastage,
         threshold_value=0.3,
         predicted_quantity=2,
-        historical_average=1.8
-        # estimated_accuracy is optional
+        historical_average=1.8,
+        predicted_value=2,
+        threshold=0.3,
+        hist_avg=1.8
+        # estimated_accuracy and new probability fields are optional
     )
 
     assert response.estimated_accuracy is None
+    assert response.missed_sale_probability is None
+    assert response.wastage_probability is None
+    assert response.hist_level_used is None
+    assert response.hist_level_description is None
+    assert response.sample_size is None
+    assert response.metrics_level_used is None
+    assert response.metrics_level_description is None
 
 
 def test_predict_item_response_threshold_type_string():
     response = PredictItemResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         threshold_type="low_wastage",
         threshold_value=0.3,
         predicted_quantity=2,
-        historical_average=1.8
+        historical_average=1.8,
+        predicted_value=2,
+        threshold=0.3,
+        hist_avg=1.8
     )
 
     assert response.threshold_type == ThresholdType.low_wastage
@@ -192,7 +211,7 @@ def test_predict_item_response_threshold_type_string():
 def test_predict_item_response_missing_required_field():
     with pytest.raises(ValidationError) as exc_info:
         PredictItemResponse(
-            item_id="T3L4D001",
+            item_id="PROD_001",
             threshold_type=ThresholdType.low_missed_sales,
             threshold_value=0.5,
             predicted_quantity=5
@@ -206,7 +225,7 @@ def test_predict_item_response_missing_required_field():
 def test_predict_item_response_invalid_threshold_value_type():
     with pytest.raises(ValidationError):
         PredictItemResponse(
-            item_id="T3L4D001",
+            item_id="PROD_001",
             threshold_type=ThresholdType.low_missed_sales,
             threshold_value="invalid",  # Should be float
             predicted_quantity=5,
@@ -270,34 +289,59 @@ def test_predict_request_json_serialization():
 
 def test_predict_item_response_json_serialization():
     response = PredictItemResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         threshold_type=ThresholdType.low_missed_sales,
         threshold_value=0.5,
         predicted_quantity=5,
         historical_average=3.5,
-        estimated_accuracy=0.85
+        estimated_accuracy=0.85,
+        predicted_value=5,
+        threshold=0.5,
+        hist_avg=3.5,
+        hist_level_used=1,
+        hist_level_description="item + route + day_period",
+        missed_sale_probability=0.1,
+        wastage_probability=0.05,
+        sample_size=25,
+        metrics_level_used=1,
+        metrics_level_description="item + route + pax_bin + day_period"
     )
 
     json_data = response.model_dump()
 
-    assert json_data["item_id"] == "T3L4D001"
+    assert json_data["item_id"] == "PROD_001"
     assert json_data["threshold_type"] == "low_missed_sales"
     assert json_data["threshold_value"] == 0.5
     assert json_data["predicted_quantity"] == 5
     assert json_data["historical_average"] == 3.5
     assert json_data["estimated_accuracy"] == 0.85
+    assert json_data["predicted_value"] == 5
+    assert json_data["threshold"] == 0.5
+    assert json_data["hist_avg"] == 3.5
+    assert json_data["hist_level_used"] == 1
+    assert json_data["hist_level_description"] == "item + route + day_period"
+    assert json_data["missed_sale_probability"] == 0.1
+    assert json_data["wastage_probability"] == 0.05
+    assert json_data["sample_size"] == 25
+    assert json_data["metrics_level_used"] == 1
+    assert json_data["metrics_level_description"] == "item + route + pax_bin + day_period"
 
 
 def test_predict_item_response_json_with_none():
     response = PredictItemResponse(
-        item_id="T3L4D001",
+        item_id="PROD_001",
         threshold_type=ThresholdType.low_wastage,
         threshold_value=0.3,
         predicted_quantity=2,
         historical_average=1.8,
-        estimated_accuracy=None
+        estimated_accuracy=None,
+        predicted_value=2,
+        threshold=0.3,
+        hist_avg=1.8
     )
 
     json_data = response.model_dump()
 
     assert json_data["estimated_accuracy"] is None
+    assert json_data["missed_sale_probability"] is None
+    assert json_data["wastage_probability"] is None

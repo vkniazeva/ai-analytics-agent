@@ -75,7 +75,7 @@ def test_read_sql_mock_mode(mock_path, mock_config):
     interim_dir.mkdir(parents=True, exist_ok=True)
 
     test_df = pd.DataFrame({
-        'item_id': ['T3L4D001', 'T3L4D002'],
+        'item_id': ['PROD_001', 'PROD_002'],
         'quantity': [5, 3]
     })
     csv_path = interim_dir / "test_table.csv"
@@ -139,7 +139,7 @@ def test_write_sql_mock_mode(mock_path, mock_config):
     interim_dir.mkdir(parents=True, exist_ok=True)
 
     test_df = pd.DataFrame({
-        'item_id': ['T3L4D001'],
+        'item_id': ['PROD_001'],
         'quantity': [5]
     })
 

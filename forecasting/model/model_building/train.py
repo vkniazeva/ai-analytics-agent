@@ -32,7 +32,8 @@ def _train_classifier(train_df: pd.DataFrame, classifier_config: dict,
         learning_rate=classifier_config["learning_rate"],
         depth=classifier_config["depth"],
         cat_features=cat_features,
-        eval_metric='F1',
+        loss_function=classifier_config["loss_function"],
+        eval_metric=classifier_config["eval_metric"],
         random_seed=classifier_config["random_seed"],
         verbose=100
     )
@@ -54,7 +55,8 @@ def _train_regression(train_df: pd.DataFrame, regressor_config: dict,
         learning_rate=regressor_config["learning_rate"],
         depth=regressor_config["depth"],
         cat_features=cat_features,
-        eval_metric='MAE',
+        loss_function=regressor_config["loss_function"],
+        eval_metric=regressor_config["eval_metric"],
         random_seed=regressor_config["random_seed"],
         verbose=100
     )

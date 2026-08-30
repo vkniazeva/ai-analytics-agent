@@ -1,4 +1,4 @@
-.PHONY: help install start init-db load dbt test metadata-sync run forecast pipeline docker-up
+.PHONY: help install start init-db load dbt test metadata-sync run forecast pipeline docker-up restart-gateway
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -44,4 +44,7 @@ api_agent: ## Run forecasting API server
 	./.venv/bin/uvicorn ai_analytics_agent.api.app:app --reload --port 8001
 
 docker-up: ## Build and start UI + agent API + forecasting API alongside Postgres
-	docker compose up -d --build postgres ai_analytics_agent forecasting ui
+	docker compose up -d --build postgres ai_analytics_agent forecasting ui gateway
+
+restart-gateway: ##retsart gateway
+	docker compose restart gateway

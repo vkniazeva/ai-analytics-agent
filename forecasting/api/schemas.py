@@ -30,6 +30,16 @@ class PredictItemResponse(BaseModel):
     predicted_quantity: int
     historical_average: float
     estimated_accuracy: Optional[float] = None
+    predicted_value: int
+    threshold: float
+    hist_avg: float
+    hist_level_used: Optional[int] = None
+    hist_level_description: Optional[str] = None
+    missed_sale_probability: Optional[float] = None
+    wastage_probability: Optional[float] = None
+    sample_size: Optional[int] = None
+    metrics_level_used: Optional[int] = None
+    metrics_level_description: Optional[str] = None
 
 class PredictCategoriesResponse(BaseModel):
     category_name: str
