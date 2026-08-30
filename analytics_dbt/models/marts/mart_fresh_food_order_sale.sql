@@ -12,6 +12,9 @@ avg_pax_by_flight_number as (
     from pax_by_flight pax
     join {{ ref('dim_flights') }} f on pax.flight_key = f.flight_key
     group by f.flight_number
+),
+route_duration as (
+    select * from {{ ref('route_duration_mapping') }}
 )
 select
     f.flight_key,
@@ -31,6 +34,8 @@ select
     dp.item_id,
     dp.category,
     dp.price,
+    (f.origin = 'city_001') as is_outbound,
+    coalesce(rd.flight_duration_hours, 3.0) as flight_duration_hours,
     coalesce(s.sold_quantity, 0) as sold_quantity,
     case
         when pax.total_passengers is null and avg_pax.avg_passengers is null then 'no_pax_data'
@@ -60,6 +65,10 @@ left join pax_by_flight pax
 
 left join avg_pax_by_flight_number avg_pax
     on avg_pax.flight_number = f.flight_number
+
+left join route_duration rd
+    on rd.origin = f.origin
+        and rd.destination = f.destination
 
 left join (
     select

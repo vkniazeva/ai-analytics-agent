@@ -13,6 +13,7 @@ data/config/cities_mapping.json
 analytics_dbt/seeds/cities_mapping.csv
 analytics_dbt/seeds/currency_mapping.csv
 analytics_dbt/seeds/product_id_mapping.csv
+analytics_dbt/seeds/route_duration_mapping.csv
 
 # Jupyter notebooks
 *_files/
