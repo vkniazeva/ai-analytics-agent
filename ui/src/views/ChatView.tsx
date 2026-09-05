@@ -7,6 +7,33 @@ import { blocksFromMessage } from '../types/chatBlocks'
 
 const MAX_TEXTAREA_HEIGHT = 120
 
+const DATA_DOMAINS: Array<{ title: string; body: string }> = [
+  {
+    title: 'Sales',
+    body: 'revenue, quantity, discounts, average sale — by year, month, route, category or item',
+  },
+  {
+    title: 'Wastage',
+    body: 'loaded / sold / wasted quantities, fresh vs non-fresh — by category, item, destination',
+  },
+  {
+    title: 'Flights & passengers',
+    body: 'flight counts, passenger counts, avg sale per passenger — by date, route, day period',
+  },
+  {
+    title: 'Product catalog',
+    body: 'item counts by category and item type',
+  },
+]
+
+const EXAMPLE_QUESTIONS: string[] = [
+  '10 best selling items by revenue in 2025',
+  'Wastage by category for December 2025, sorted from worst',
+  'Compare revenue in December 2025 vs January 2026 by route',
+  'Average sale per passenger by route, top 5',
+  'Show revenue by month in 2025 as a chart',
+]
+
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-[5px] py-1">
@@ -59,9 +86,58 @@ export function ChatView() {
       <div ref={threadRef} className="flex-1 overflow-y-auto px-8 pb-2 pt-8">
         <div className="mx-auto flex max-w-[920px] flex-col gap-[26px]">
           {messages.length === 0 && (
-            <p className="text-sm text-[var(--text-muted)]">
-              Ask a question to begin.
-            </p>
+            <div className="flex flex-col gap-6">
+              <div className="flex gap-3.5">
+                <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--purple-light)]">
+                  <Sparkles size={20} color="var(--purple-deep)" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-[15px] font-medium text-[var(--text-strong)]">
+                    Ask about the onboard sales warehouse.
+                  </p>
+                  <p className="text-[13.5px] leading-[1.55] text-[var(--text-muted)]">
+                    I can answer questions across sales, wastage, flights, passengers and the product catalog. Group results by any dimension, filter by period or route, or request a chart.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {DATA_DOMAINS.map((domain) => (
+                  <div
+                    key={domain.title}
+                    className="rounded-[12px] border border-[var(--border-subtle)] bg-white px-4 py-3"
+                  >
+                    <p className="text-[13px] font-semibold text-[var(--text-strong)]">
+                      {domain.title}
+                    </p>
+                    <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--text-muted)]">
+                      {domain.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-[12px] font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                  Try one of these
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {EXAMPLE_QUESTIONS.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => {
+                        setDraft(question)
+                        textareaRef.current?.focus()
+                      }}
+                      className="rounded-full border border-[var(--border-subtle)] bg-white px-3.5 py-1.5 text-[12.5px] text-[var(--text-strong)] transition-colors hover:border-purple-main hover:text-purple-main"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
           {messages.map((message) => (
             <div

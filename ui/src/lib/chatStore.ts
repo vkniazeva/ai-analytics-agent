@@ -7,6 +7,13 @@ import {
   saveConversationId,
 } from './storage'
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
 interface ChatState {
   messages: ChatMessage[]
   conversationId: string | null
@@ -24,7 +31,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   sendMessage: async (question) => {
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       role: 'user',
       content: question,
     }
@@ -41,7 +48,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       })
       saveConversationId(response.conversation_id)
       const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: 'assistant',
         content: response.answer,
         chart: response.chart ?? undefined,
