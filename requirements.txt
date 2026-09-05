@@ -14,3 +14,4 @@ category-encoders
 pytest
 anthropic
 ollama
+groq

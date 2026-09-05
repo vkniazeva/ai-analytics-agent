@@ -103,14 +103,24 @@ def has_tool_calls(message) -> bool:
     return bool(message.get("tool_calls"))
 
 
-def call_llm(messages, tools, model=MODEL, options=None):
-    if os.environ.get("LLM_PROVIDER", "ollama") == "bedrock":
+def call_llm(messages, tools, model=None, options=None):
+    provider = os.environ.get("LLM_PROVIDER", "ollama")
+
+    if provider == "bedrock":
         from ai_analytics_agent.llm import bedrock_provider
         return bedrock_provider.call_llm(
-            messages, tools, model=os.environ["BEDROCK_MODEL_ID"], options=options
+            messages, tools, model=model or os.environ["BEDROCK_MODEL_ID"], options=options
         )
 
-    response = ollama.chat(model=model, messages=messages, tools=tools, think=False, options=options)
+    if provider == "groq":
+        from ai_analytics_agent.llm import groq_provider
+        return groq_provider.call_llm(
+            messages, tools,
+            model=model or os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            options=options,
+        )
+
+    response = ollama.chat(model=model or MODEL, messages=messages, tools=tools, think=False, options=options)
     return response["message"]
 
 
