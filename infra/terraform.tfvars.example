@@ -1,0 +1,15 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored and NEVER committed.
+
+# Your public IP with /32 suffix.
+# Get it with: curl -s https://checkip.amazonaws.com
+# Example: "203.0.113.42/32"
+my_ip = "REPLACE_WITH_YOUR_IP/32"
+
+# Email that receives AWS Budget alerts (80% actual + 100% forecasted).
+budget_email = "you@example.com"
+
+# Optional overrides (defaults are eu-central-1 + t3.medium + $25/mo budget):
+# aws_region       = "eu-central-1"
+# instance_type    = "t3.medium"
+# budget_limit_usd = 25
