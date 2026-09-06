@@ -15,8 +15,9 @@ architecture, semantic analytics API, and LLM-driven insights generation.
 6. [Data Model (ER Diagram)](#data-model-er-diagram)
 7. [AI Analytics Agent](#ai-analytics-agent)
 8. [Setup](#setup)
-9. [Changelog and State](#changelog-and-state)
-10. [Other](#other)
+9. [Deployment](#deployment)
+10. [Changelog and State](#changelog-and-state)
+11. [Other](#other)
 
 ---
 
@@ -42,7 +43,7 @@ This project simulates an airline retail analytics environment and demonstrates 
 * Superset BI dashboards
 * Fresh food demand forecasting (EDA module)
 * (In Progress) ML forecasting models
-* **AI analytics agent** - natural language Q&A over the warehouse via a governed semantic layer and a local LLM (FastAPI + Ollama)
+* **AI analytics agent** - natural language Q&A over the warehouse via a governed semantic layer and a pluggable LLM backend (Ollama for local dev, Groq or Amazon Bedrock in the cloud)
 
 ---
 
@@ -277,17 +278,18 @@ run arbitrary SQL. This gives consistent metric definitions exposed conversation
 writing a one-off query per request.
 
 **Architecture**: a FastAPI endpoint (`POST /ask`) keeps per-conversation message history and drives a
-tool-calling loop against a local Ollama model. The LLM picks one of 5 tools (one per domain); each tool call
-is validated against that domain's semantic layer YAML and turned into SQL by a generic query engine, reading
-directly from the same star schema (`mart.*`) described above — the agent adds no new data, only a
-conversational layer on top of the existing warehouse.
+tool-calling loop against a pluggable LLM backend (Ollama / Groq / Amazon Bedrock, selected at runtime via
+`LLM_PROVIDER`). The LLM picks one of 5 tools (one per domain); each tool call is validated against that
+domain's semantic layer YAML and turned into SQL by a generic query engine, reading directly from the same
+star schema (`mart.*`) described above — the agent adds no new data, only a conversational layer on top of
+the existing warehouse.
 
 ```mermaid
 flowchart LR
     User -->|question| API["FastAPI /ask"]
     API --> AgentLoop["Agent loop"]
-    AgentLoop <-->|tool calling| LLM["Local LLM (Ollama)"]
-    AgentLoop --> QueryEngine["Query engine +\nsemantic layer configs"]
+    AgentLoop <-->|tool calling| LLM["LLM backend<br/>(Ollama / Groq / Bedrock)"]
+    AgentLoop --> QueryEngine["Query engine +<br/>semantic layer configs"]
     QueryEngine --> DB[("PostgreSQL mart schema")]
 ```
 
@@ -345,6 +347,49 @@ admin / admin
 
 ---
 
+## Deployment
+
+### POC — What's Live
+
+A single EC2 instance (`t3.medium`, ~$35/mo) in `eu-central-1` running the full stack via `docker compose`:
+Postgres × 2 (analytics + Superset metadata), Superset, 2× FastAPI (agent + forecasting), React UI, and an
+nginx gateway. Nginx handles HTTP Basic Auth and per-endpoint rate limiting (the LLM endpoint is capped so
+a bored tester can't burn the wallet). Elastic IP gives a stable address; an AWS Budget alert is the safety
+net. Everything is provisioned via Terraform (`infra/`) — one command to `apply` or `destroy`, so the demo
+is reproducible from git in ~10 minutes.
+
+**Why this shape for a POC:** minimum AWS surface area, everything reproducible from git, ~$140 in free-tier
+credits cover roughly 4 months of continuous uptime (much longer if stopped between demos). Trade-offs
+consciously accepted: no HA, no HTTPS, single AZ, no autoscaling.
+
+### LLM Hosting — Alternatives & Tradeoffs
+
+The agent is provider-agnostic (`LLM_PROVIDER=ollama|bedrock|groq`). Choosing between them is a business
+decision, not a technical one. The axes that matter:
+
+| Option                              | Data privacy                            | Demo cost                             | Cost @ 1M req/mo | Latency  | Best fit                                          |
+|-------------------------------------|-----------------------------------------|---------------------------------------|------------------|----------|---------------------------------------------------|
+| **Groq API** (current POC)          | 3rd-party (subject to Groq TOS)         | Free tier                             | ~$50-500         | 0.5-2 s  | Cost-sensitive POC, public / non-sensitive data   |
+| **Bedrock** (managed AWS)           | Stays in AWS boundary; VPC endpoint     | Pay-per-token                         | ~$500-2000       | 1-3 s    | Enterprise, regulated data, IAM-first orgs        |
+| **Ollama on GPU EC2** (self-hosted) | Never leaves your VPC                   | ~$10/mo on-demand / $380/mo 24×7      | ~$400+/GPU node  | 2-5 s    | Strict compliance (HIPAA, finance), on-prem parity |
+| **OpenAI / Anthropic direct API**   | 3rd-party                               | Free tier / pay-per-token             | ~$200-1500       | 0.5-2 s  | Fast MVP, non-regulated                           |
+
+
+**Decision framework (in this order):**
+
+1. **Data protection first.** Regulated data (HIPAA, GDPR-sensitive, financial) narrows options to Bedrock
+   or self-hosted immediately — pay-per-token APIs are usually off the table regardless of price.
+2. **Cost profile second.** Steady baseline traffic favours self-hosting or reserved capacity; spiky /
+   unpredictable traffic favours pay-per-token APIs. Fixed per-node cost beats per-token cost above roughly
+   1M requests/month.
+3. **Latency last.** For chat-style analytics a 1-2 s difference rarely changes business value. Latency
+   becomes primary only for voice interfaces or high-frequency inline calls.
+
+For this project's POC scope (portfolio demo, public synthetic data, tight budget), **Groq API** was
+chosen. **Bedrock** would be the day-one choice at an enterprise the moment compliance enters the room.
+
+---
+
 ## Changelog and State
 
 ### Completed
@@ -365,47 +410,10 @@ admin / admin
 * **AI analytics agent** - see [AI Analytics Agent](#ai-analytics-agent)
   * Semantic layer configs (metrics, dimensions, joins) for sales, wastage, flights, product catalog, passenger sales
   * FastAPI `/ask` endpoint with conversation history
-  * LLM tool-calling agent loop (local Ollama model) + generic SQL query engine
+  * LLM tool-calling agent loop with pluggable backend (Ollama / Groq / Bedrock) + generic SQL query engine
   * Test coverage across tools, llm, api, and utils layers
+* Deployed to AWS
 
----
-
-### In Progress
-
-* ML forecasting models (baseline, statistical, tree-based)
-* Model evaluation and selection
-* Forecasting pipeline automation
-
----
-
-### Next Steps
-
-* Production forecasting pipeline
-* Address AI agent limitations (see [AI Analytics Agent](#ai-analytics-agent) / [`ai_analytics_agent/README.md`](ai_analytics_agent/README.md)): persistent conversation store, retry on empty LLM responses, surfaced error handling, auth
-
----
-
-## Other
-
-### Data Samples
-
-Data samples can be exported from PostgreSQL using dbt or SQL queries:
-
-```bash
-# Export staging models
-psql -d ai_analytics -c "COPY staging.stg_sales TO '/tmp/sample_sales.csv' WITH CSV HEADER LIMIT 100"
-
-# Or query directly
-psql -d ai_analytics -c "SELECT * FROM mart.dim_flights LIMIT 10"
-```
-
-**dbt schemas in PostgreSQL:**
-- `staging.*` - Cleaned raw data
-- `intermediate.*` - Transformed business entities  
-- `mart.*` - Star schema and analytical tables
-- `metadata.*` - dbt model catalog and lineage
-
----
 
 ### Notes
 
