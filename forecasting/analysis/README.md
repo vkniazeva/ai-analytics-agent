@@ -19,7 +19,7 @@ This exploratory data analysis (EDA) investigates fresh food sales patterns on f
 
 | flight_key  | flight_number | origin   | destination | date       | item_id   | category | price | sold_quantity | number_of_passengers |
 |-------------|---------------|----------|-------------|------------|-----------|----------|-------|---------------|----------------------|
-| c02f71...   | AB134         | city_002 | city_001    | 2025-11-02 | C3L2D037  | Bakery   | 7.0   | 0.0           |  175.0               |
+| c02f71...   | AB134         | city_002 | city_001    | 2025-11-02 | PROD_093  | Bakery   | 7.0   | 0.0           |  175.0               |
 
 
 ## Data Cleaning
@@ -277,22 +277,22 @@ The weekend and weekday features provide full coverage of all calendar days as e
 
 | item_id   | avg_qty   | total_qty   | observations  | avg_price   |
 |-----------|-----------|-------------|---------------|-------------|
-| T3L4D007  | 2.23      | 12,760      | 5,729         | 28.0        |
-| C3L2D037  | 0.64      | 3,986       | 6,193         | 7.0         |
-| C3L2D041  | 0.63      | 3,904       | 6,193         | 7.0         |
-| T3L4D129  | 0.58      | 3,333       | 5,729         | 15.0        |
-| C3L2W121  | 0.53      | 3,291       | 6,193         | 17.0        |
-| C3L2D043  | 0.46      | 2,878       | 6,193         | 7.0         |
-| T3L4D008  | 0.47      | 2,665       | 5,729         | 25.0        |
-| T3L4S016  | 0.37      | 2,306       | 6,193         | 15.0        |
-| T3L4D127  | 0.35      | 2,028       | 5,729         | 30.0        |
-| C3L2W161  | 0.22      | 1,252       | 5,729         | 20.0        |
+| PROD_199  | 2.23      | 12,760      | 5,729         | 28.0        |
+| PROD_093  | 0.64      | 3,986       | 6,193         | 7.0         |
+| PROD_094  | 0.63      | 3,904       | 6,193         | 7.0         |
+| PROD_210  | 0.58      | 3,333       | 5,729         | 15.0        |
+| PROD_105  | 0.53      | 3,291       | 6,193         | 17.0        |
+| PROD_096  | 0.46      | 2,878       | 6,193         | 7.0         |
+| PROD_200  | 0.47      | 2,665       | 5,729         | 25.0        |
+| PROD_216  | 0.37      | 2,306       | 6,193         | 15.0        |
+| PROD_209  | 0.35      | 2,028       | 5,729         | 30.0        |
+| PROD_118  | 0.22      | 1,252       | 5,729         | 20.0        |
 
-`T3L4D007` is the clear sales leader with an average of 2.23 units per observation (including zeros), totalling 12,760 units — over 3x the next best item. 
+`PROD_199` is the clear sales leader with an average of 2.23 units per observation (including zeros), totalling 12,760 units — over 3x the next best item. 
 Notably, this item also carries one of the highest price points (28.0), suggesting that demand is largely price-inelastic for this product. 
 The zero-inclusive average of 2.23 indicates relatively strong sales volume compared to other items, though overall demand has decreased significantly.
 
-In contrast, `C3L2W161`, `T3L4D127`, and `T3L4S016` show low average quantities despite having comparable or higher observation counts, meaning these items are frequently loaded but rarely sold. 
+In contrast, `PROD_118`, `PROD_209`, and `PROD_216` show low average quantities despite having comparable or higher observation counts, meaning these items are frequently loaded but rarely sold. 
 This pattern is independent of price — the low-performing group includes both budget (7.0) and expensive (30.0) items — suggesting that product type rather than price drives demand for these SKUs. 
 The distribution of sales across items will be a key signal for the predictive model and warrants item-level feature engineering.
 
@@ -367,10 +367,10 @@ The `price` feature was discretized into three bins: Low (≤7), Medium (8–17)
 | High        | 0.81  | 18,643 | 22,916 |
 
 The initial analysis suggested that high-priced items outperform lower price tiers (mean 0.81 vs 0.58). 
-However, this result is driven entirely by a single item `T3L4D007` (price=28.0) which was identified earlier as a strong sales outlier. 
+However, this result is driven entirely by a single item `PROD_199` (price=28.0) which was identified earlier as a strong sales outlier. 
 Excluding this item reveals the opposite pattern:
 
-| price_bin | mean (excl. T3L4D007) |
+| price_bin | mean (excl. PROD_199) |
 |-----------|-----------------------|
 | Low       | 0.58                  |
 | Medium    | 0.49                  |
@@ -440,7 +440,7 @@ and temporal features show no meaningful predictive signal and are candidates fo
 Key findings that directly shape the modelling approach:
 
 - The target variable shows severe zero-inflation (63.5% zeros) with extreme right skew, ruling out standard regression approaches and MSE-based optimization
-- `T3L4D007` remains a structural outlier that disproportionately influences price-level aggregations — item identity must be treated as a primary feature rather than a proxy
+- `PROD_199` remains a structural outlier that disproportionately influences price-level aggregations — item identity must be treated as a primary feature rather than a proxy
 - Passenger load exhibits a non-linear threshold effect with an optimal sales conversion window of 100–150 passengers, motivating the use of `pax_bin` over the raw continuous feature
 - Route-level variation is substantial with notable directional asymmetries, particularly for hub routes — route identity carries strong predictive signal
 - Price elasticity is product-dependent and cannot be interpreted independently of `item_id`
@@ -490,19 +490,19 @@ To handle sparse data (63.5% zeros), we use a **3-level fallback hierarchy** fro
 
 **Level 1:** `item_id × route × day_period`  
 - Most granular: captures route‑specific and time‑of‑day patterns  
-- Example: `T3L4D007 on city_001→city_017 during Morning`  
+- Example: `PROD_199 on city_001→city_017 during Morning`  
 - Coverage: ~95% of records have ≥3 training samples  
 - Used for: 94% of predictions in later folds  
 
 **Level 2:** `item_id × route × is_night`  
 - Fallback when Level 1 has insufficient data  
 - Less granular but better coverage  
-- Example: `T3L4D007 on city_001→city_017 during night hours`  
+- Example: `PROD_199 on city_001→city_017 during night hours`  
 - Used for: ~3% of predictions  
 
 **Level 3:** `item_id × day_period`  
 - Broadest fallback, removes route specificity  
-- Example: `T3L4D007 during Morning` (any route)  
+- Example: `PROD_199 during Morning` (any route)  
 - Coverage: 100% (all combinations have ≥10 samples)  
 - Used for: ~3% of predictions (new routes, rare combinations)
 

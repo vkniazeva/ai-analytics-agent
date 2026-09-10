@@ -18,6 +18,7 @@ analytics_dbt/seeds/route_duration_mapping.csv
 # Jupyter notebooks
 *_files/
 interim_for_notebooks/
+forecasting/analysis/old_notebooks/
 
 # Model artifacts
 catboost_info/
