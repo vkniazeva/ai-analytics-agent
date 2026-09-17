@@ -390,6 +390,97 @@ models:
             - payment_type
             - card_number_prefix
 
+  - name: mart_product_sales
+    description: "Product-level sales aggregation. Grain: one row per item_id + category + item_type + is_food."
+    columns:
+      - name: item_id
+        description: Item identifier
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: item_id
+      - name: category
+        description: Product category
+      - name: item_type
+        description: Product type
+      - name: is_food
+        description: Boolean indicating food item
+      - name: total_sales
+        description: Sum of purchase_amount for the product
+      - name: quantity_sold
+        description: Sum of sold_quantity across all transactions
+      - name: total_transactions
+        description: Distinct slip_id count for the product
+      - name: attach_rate
+        description: quantity_sold / total_transactions
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - item_id
+            - category
+            - item_type
+            - is_food
+
+  - name: mart_flight_sales
+    description: "Flight-level sales aggregation with passenger data. Grain: one row per flight_number + route + date."
+    columns:
+      - name: flight_number
+        description: Flight number
+        tests:
+          - not_null
+      - name: route
+        description: Origin-destination string (origin || '-' || destination)
+        tests:
+          - not_null
+      - name: date
+        description: Flight date key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: is_weekend
+        description: Boolean indicating weekend (derived from date, passthrough)
+      - name: total_sales
+        description: Sum of purchase_amount for the flight
+      - name: total_pax
+        description: Total passengers on the flight across travel classes
+      - name: revenue_per_pax
+        description: total_sales / total_pax (null when total_pax is 0 or missing)
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - flight_number
+            - route
+            - date
+
+  - name: mart_sales_performance
+    description: "Daily sales performance aggregation. Grain: one row per date."
+    columns:
+      - name: date
+        description: Calendar date
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: month
+        description: Month number (passthrough from dim_date)
+      - name: is_weekend
+        description: Boolean indicating weekend (passthrough from dim_date)
+      - name: total_sales
+        description: Sum of purchase_amount for the day
+      - name: total_transactions
+        description: Distinct slip_id count for the day
+      - name: total_items
+        description: Sum of sold_quantity for the day
+      - name: avg_item_price
+        description: total_sales / total_items
+      - name: avg_check
+        description: total_sales / total_transactions
+
   - name: mart_fresh_food_order_sale
     description: "Fresh food sales mart with all possible flight-product combinations, enriched with flight, temporal, and product attributes (filtered by only loaded flight items). Serves as the foundation for demand forecasting models."
     columns:
