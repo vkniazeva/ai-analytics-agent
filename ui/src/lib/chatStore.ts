@@ -1,11 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage } from '../types/chat'
 import { postAsk } from './api'
-import {
-  clearConversationId,
-  loadConversationId,
-  saveConversationId,
-} from './storage'
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -25,7 +20,7 @@ interface ChatState {
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
-  conversationId: loadConversationId(),
+  conversationId: null,
   loading: false,
   error: null,
 
@@ -46,7 +41,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
         question,
         conversation_id: get().conversationId ?? undefined,
       })
-      saveConversationId(response.conversation_id)
       const assistantMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
@@ -67,7 +61,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   startNewSession: () => {
-    clearConversationId()
     set({ messages: [], conversationId: null, error: null })
   },
 }))

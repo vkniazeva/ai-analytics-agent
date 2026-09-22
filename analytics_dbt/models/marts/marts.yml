@@ -439,7 +439,7 @@ models:
           - not_null
           - relationships:
               to: ref('dim_date')
-              field: date_key
+              field: date
       - name: is_weekend
         description: Boolean indicating weekend (derived from date, passthrough)
       - name: total_sales
@@ -465,7 +465,7 @@ models:
           - unique
           - relationships:
               to: ref('dim_date')
-              field: date_key
+              field: date
       - name: month
         description: Month number (passthrough from dim_date)
       - name: is_weekend

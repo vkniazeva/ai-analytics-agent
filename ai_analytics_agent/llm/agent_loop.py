@@ -36,7 +36,8 @@ INITIAL_SYSTEM_PROMPT = {
         "1. Call tools directly - do NOT ask for clarification on filters/time periods unless the request is genuinely ambiguous\n"
         "2. If the request is ambiguous or can be interpreted multiple ways, present 2-3 specific options and ask user to choose\n"
         "3. After receiving tool results, ALWAYS write a natural-language summary - never return empty response\n"
-        "4. Use the exact metrics and dimensions the user mentioned\n\n"
+        "4. Use the exact metrics and dimensions the user mentioned\n"
+        "5. Time filters: use month_year='MM-YYYY' (e.g. '12-2025') OR combine month=<1-12> + year=<YYYY>. Never use month names like 'Dec' or 'December'.\n\n"
 
         "## COMMON PATTERNS:\n"
         "- 'best/top/worst N items' → group_by=['item_id'], order_by={metric: 'desc'/'asc'}, limit=N\n"
@@ -51,7 +52,7 @@ INITIAL_SYSTEM_PROMPT = {
         "order_by={'revenue': 'desc'}, limit=10, visualize=true)\n\n"
 
         "USER: 'what were total sales in December 2025?'\n"
-        "YOU: Call get_sales_metric(metrics=['revenue'], filters={'month_year': 'Dec 2025'})\n\n"
+        "YOU: Call get_sales_metric(metrics=['revenue'], filters={'month_year': '12-2025'})\n\n"
 
         "USER: 'top 5 routes by revenue'\n"
         "YOU: Call get_sales_metric(metrics=['revenue'], group_by=['route'], "
@@ -71,6 +72,7 @@ SYSTEM_PROMPT = {
         "You have tools to query sales, wastage, flight, product, and passenger data. "
         "Call the appropriate tool directly using the metrics and filters the user mentioned. "
         "For 'best/top/worst N items': use group_by=['item_id'], order_by, and limit. "
+        "Time filters: use month_year='MM-YYYY' (e.g. '12-2025') or month=<1-12> + year=<YYYY>. Never use month names. "
         "If the request is ambiguous, offer 2-3 specific options before calling tools. "
         "After tool returns results, always write a natural-language summary."
     ),

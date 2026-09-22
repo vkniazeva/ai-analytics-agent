@@ -29,7 +29,7 @@ const DATA_DOMAINS: Array<{ title: string; body: string }> = [
 const EXAMPLE_QUESTIONS: string[] = [
   '10 best selling items by revenue in 2025',
   'Wastage by category for December 2025, sorted from worst',
-  'Compare revenue in December 2025 vs January 2026 by route',
+  'Worst selling items in Jan 2026',
   'Average sale per passenger by route, top 5',
   'Show revenue by month in 2025 as a chart',
 ]
